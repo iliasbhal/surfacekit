@@ -1,4 +1,4 @@
-import { useScreenDimensions } from "./useScreen";
+import { useScreenDimensions } from "../ScreenDimension";
 
 import { Platform } from "react-native";
 import { useDeviceOrientation } from "./useDeviceOrientation";

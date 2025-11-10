@@ -15,7 +15,143 @@ var React9__default = /*#__PURE__*/_interopDefault(React9);
 var Animated__default = /*#__PURE__*/_interopDefault(Animated);
 
 // src/surface.tsx
+var ANIMATE_PRESENCE_PROPS_KEY = "__AnimatePresenceProps__";
+var getAnimatedPresenceProps = (props) => {
+  const animtePresencProps = props[ANIMATE_PRESENCE_PROPS_KEY] || {};
+  return animtePresencProps;
+};
 var AnimatePresenceContext = React9__default.default.createContext(null);
+var AnimatePresence = (props) => {
+  console.log("ANIMATE PRESENCE ENTER");
+  const mode = props.mode || "sync";
+  const propagate = props.propagate || false;
+  const parentPresence = React9__default.default.useContext(AnimatePresenceContext);
+  const [store, setStore] = React9__default.default.useState(() => ({
+    isInitial: true,
+    renderedChildKeys: /* @__PURE__ */ new Set(),
+    enteredKeys: /* @__PURE__ */ new Set(),
+    keysBeforeExit: /* @__PURE__ */ new Set(),
+    // These indexes are used to track exiting elements indexes
+    // These are used to maintain exiting element placemenets. 
+    exitedIndexes: [],
+    contextByKey: /* @__PURE__ */ new Map(),
+    animatingKeys: /* @__PURE__ */ new Set()
+  }));
+  const rerender = () => setStore((p) => ({ ...p }));
+  store.renderedChildKeys.clear();
+  console.log("ANIMATING KEYS", Array.from(store.animatingKeys));
+  const childrenArr = (
+    // @ts-expect-error
+    props.children?.length > -1 ? props.children : [props.children]
+  );
+  const children = childrenArr.filter((c) => !!c).map((child, index, arr) => {
+    const isLast = arr.length - 1 === index;
+    if (!child.key) return child;
+    const removeExitingChild = () => {
+      if (context.isPresent) {
+        return;
+      }
+      const isAnimatingExit = store.animatingKeys.has(child.key);
+      if (!isAnimatingExit) {
+        store.contextByKey.delete(child.key);
+        store.exitedIndexes.push(context.index);
+        store.exitedIndexes.sort();
+        rerender();
+      }
+    };
+    const context = {
+      key: child.key,
+      isInitial: store.isInitial,
+      index,
+      isLast,
+      element: child,
+      get entered() {
+        const hasEntered = store.enteredKeys.has(child.key);
+        return hasEntered;
+      },
+      get entering() {
+        const isPresent = context.isPresent;
+        const isAnimatingEnter = store.animatingKeys.has(child.key);
+        const hasEntered = context.entered;
+        return isPresent && isAnimatingEnter && !hasEntered;
+      },
+      get isPresent() {
+        if (propagate && !parentPresence?.isPresent) {
+          return false;
+        }
+        const isRenderedNormally = store.renderedChildKeys.has(child.key);
+        return isRenderedNormally;
+      },
+      lifecycle: {
+        onRender() {
+          if (context.isPresent) {
+            Promise.resolve().then(() => {
+              removeExitingChild();
+            });
+          }
+        },
+        onAnimationStart() {
+          store.animatingKeys.add(child.key);
+        },
+        onAnimationEnd() {
+          store.animatingKeys.delete(child.key);
+          if (context.isPresent) {
+            store.enteredKeys.add(child.key);
+          } else {
+            removeExitingChild();
+          }
+        }
+      }
+    };
+    store.renderedChildKeys.add(child.key);
+    store.contextByKey.set(child.key, context);
+    return /* @__PURE__ */ React9__default.default.createElement(AnimatePresenceContext.Provider, { key: child.key, value: { ...context } }, child);
+  });
+  const exitingChildrenKeys = /* @__PURE__ */ new Set();
+  store.contextByKey.forEach((context) => {
+    const child = context.element;
+    if (!(typeof child === "object")) return;
+    if (!("key" in child)) return;
+    const childKey = child.key;
+    const childStillInTree = store.renderedChildKeys.has(childKey);
+    if (childStillInTree) return;
+    console.log("EXITING ELEMENT", childKey);
+    exitingChildrenKeys.add(childKey);
+    const animatedExitingElement = /* @__PURE__ */ React9__default.default.createElement(
+      AnimatePresenceContext.Provider,
+      {
+        key: childKey,
+        value: { ...context }
+      },
+      child
+    );
+    if (context.isLast) {
+      children.push(animatedExitingElement);
+    } else {
+      const exitedIndexesBefore = store.exitedIndexes.filter((removedIdx) => context.index > removedIdx);
+      children.splice(context.index - exitedIndexesBefore.length, 0, animatedExitingElement);
+    }
+  });
+  const hasExitingElements = exitingChildrenKeys.size > 0;
+  console.log("hasExitingElements", Array.from(exitingChildrenKeys));
+  if (!hasExitingElements) {
+    console.log("SETUP keysBeforeExit", Array.from(store.renderedChildKeys));
+    store.keysBeforeExit = new Set(Array.from(store.renderedChildKeys));
+  } else {
+    children.forEach((child, index) => {
+      if (!child?.key) return;
+      const isPresentBeforeAnyExit = store.keysBeforeExit.has(child.key);
+      if (mode === "wait" && !isPresentBeforeAnyExit) {
+        console.log("REMOVED", child.key);
+        children[index] = /* @__PURE__ */ React9__default.default.createElement(React9__default.default.Fragment, null);
+      }
+    });
+  }
+  console.log("ANIMATE PRESENCE AFTER");
+  store.isInitial = false;
+  store.exitedIndexes = [];
+  return children;
+};
 
 // src/lib/anyConfig.ts
 var VariantFactoryKey = "__InternalAnyConfig__";
@@ -1651,9 +1787,13 @@ var createTextBase = (surfaced) => surfaced(reactNative.Text).with((tokens) => (
   }
 }));
 
+exports.ANIMATE_PRESENCE_PROPS_KEY = ANIMATE_PRESENCE_PROPS_KEY;
+exports.AnimatePresence = AnimatePresence;
+exports.AnimatePresenceContext = AnimatePresenceContext;
 exports.createSurfaced = createSurfaced;
 exports.createTextBase = createTextBase;
 exports.createTheme = createTheme;
 exports.createViewBase = createViewBase;
+exports.getAnimatedPresenceProps = getAnimatedPresenceProps;
 //# sourceMappingURL=index.cjs.map
 //# sourceMappingURL=index.cjs.map

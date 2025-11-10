@@ -1,6 +1,6 @@
 import React from "react";
 import { Gesture, GestureType } from "react-native-gesture-handler";
-import { AnimatePresenceContextValue } from "./AnimatePresence";
+import { AnimatePresenceContextValue } from "../AnimatePresence";
 import { useRerenderRef } from "./useRerenderRef";
 
 const InteractionStateContext = React.createContext<any>(null);

@@ -6,7 +6,7 @@ import {
   AnimatedProps,
   BaseAnimationBuilder,
 } from "react-native-reanimated";
-import { AnimatePresenceContext } from "./lib/AnimatePresence";
+import { AnimatePresenceContext } from "./AnimatePresence";
 import {
   AnyConfig,
   anyStyle,
@@ -31,7 +31,7 @@ import {
 import { OrientationProvider, useDeviceOrientation } from "./lib/useDeviceOrientation";
 import { KeyboardProvider } from "./lib/useKeyboardHeight";
 import { useMediaQuery } from "./lib/useMediaQuery";
-import { ScreenDimensionProvider } from "./lib/useScreen";
+import { ScreenDimensionProvider } from "./ScreenDimension";
 
 export interface SurfaceTheme extends Record<string, any> {
   fonts: Record<string, Record<string, any>>

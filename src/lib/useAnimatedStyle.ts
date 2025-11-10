@@ -5,7 +5,7 @@ import { Keyframe, SharedValue, useAnimatedStyle, withDelay } from "react-native
 import { scheduleOnRN } from "react-native-worklets";
 import * as DefaultAnimations from "./defaultAnimations";
 import { useDynamicSharedValues } from "./useDynamicSharedValues";
-import { AnimatePresenceContextValue } from "./AnimatePresence";
+import { AnimatePresenceContextValue } from "../AnimatePresence";
 import { createControlledPromise } from "./ControlledPromise";
 
 const defaultTransforms: Record<string, any> = {

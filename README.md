@@ -5,7 +5,7 @@
 
 > Lightning-fast, seamless UI creation for React and React Native.
 
-### ✨ Why HoneyPipe?
+### ✨ Why SurfaceKit?
 
 - **🚀 Zero Config Magic** - Use it as is or start customzing your own theme, it just works 🪄
 - **🎯 Straight to the Point** - Stay in the flow by updating style inline. 
