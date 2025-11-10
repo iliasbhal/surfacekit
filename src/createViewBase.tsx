@@ -17,12 +17,15 @@ const transform = (style: any, config: any) => {
 
 export const createViewBase = <C extends Surfaced>(surfaced: C) => surfaced(View).with((tokens) => ({
   variants: {
+    // @ts-expect-error
     position: Position,
     zIndex: surfaced.any({ attribute: 'zIndex', number: true, }),
     z: surfaced.any({ attribute: 'zIndex', number: true, }),
     absoluteFill: { true: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 } },
     absolute: { true: Position.absolute },
+    // @ts-expect-error
     fixed: { true: Position.fixed },
+    // @ts-expect-error
     sticky: { true: Position.sticky },
     relative: { true: Position.relative },
     static: { true: Position.static },
@@ -228,13 +231,13 @@ export const createViewBase = <C extends Surfaced>(surfaced: C) => surfaced(View
     backgroundPosition: surfaced.any({ attribute: 'backgroundPosition', string: true }),
     backgroundSize: surfaced.any({ attribute: 'backgroundSize', string: true }),
     backgroundImage: surfaced.any({ attribute: 'backgroundImage', string: true }),
-    backgroundRepeat: {
-      'repeat': { backgroundRepeat: 'repeat' },
-      'repeat-x': { backgroundRepeat: 'repeat-x' },
-      'repeat-y': { backgroundRepeat: 'repeat-y' },
-      'no-repeat': { backgroundRepeat: 'no-repeat' },
-      'space': { backgroundRepeat: 'space' },
-    },
+    // backgroundRepeat: {
+    //   'repeat': { backgroundRepeat: 'repeat' as const },
+    //   'repeat-x': { backgroundRepeat: 'repeat-x' },
+    //   'repeat-y': { backgroundRepeat: 'repeat-y' },
+    //   'no-repeat': { backgroundRepeat: 'no-repeat' },
+    //   'space': { backgroundRepeat: 'space' },
+    // },
 
 
     // Border
@@ -313,23 +316,35 @@ export const createViewBase = <C extends Surfaced>(surfaced: C) => surfaced(View
     overflowScroll: { true: { overflow: 'scroll' } },
 
     overflowX: {
+      // @ts-expect-error
       'visible': { overflowX: 'visible' },
+      // @ts-expect-error
       'hidden': { overflowX: 'hidden' },
+      // @ts-expect-error
       'scroll': { overflowX: 'scroll' },
     },
 
+    // @ts-expect-error
     overflowXVisible: { true: { overflowX: 'visible' } },
+    // @ts-expect-error
     overflowXHidden: { true: { overflowX: 'hidden' } },
+    // @ts-expect-error
     overflowXScroll: { true: { overflowX: 'scroll' } },
 
     overflowY: {
+      // @ts-expect-error
       'visible': { overflowY: 'visible' },
+      // @ts-expect-error
       'hidden': { overflowY: 'hidden' },
+      // @ts-expect-error
       'scroll': { overflowY: 'scroll' },
     },
 
+    // @ts-expect-error
     overflowYVisible: { true: { overflowY: 'visible' } },
+    // @ts-expect-error
     overflowYHidden: { true: { overflowY: 'hidden' } },
+    // @ts-expect-error
     overflowYScroll: { true: { overflowY: 'scroll' } },
 
     display: {
@@ -339,13 +354,19 @@ export const createViewBase = <C extends Surfaced>(surfaced: C) => surfaced(View
 
 
     visibility: {
+      // @ts-expect-error
       'visible': { visibility: 'visible' },
+      // @ts-expect-error
       'hidden': { visibility: 'hidden' },
+      // @ts-expect-error
       'collapse': { visibility: 'collapse' },
     },
 
+    // @ts-expect-error
     visibilityVisible: { true: { visibility: 'visible' } },
+    // @ts-expect-error
     visibilityHidden: { true: { visibility: 'hidden' } },
+    // @ts-expect-error
     visibilityCollapse: { true: { visibility: 'collapse' } },
 
     backdropFilter: surfaced.any({ attribute: 'backdropFilter', string: true }),
@@ -359,15 +380,22 @@ export const createViewBase = <C extends Surfaced>(surfaced: C) => surfaced(View
     boxShadow: surfaced.any({ attribute: 'boxShadow', string: true }),
 
     overscrollBehavior: {
+      // @ts-expect-error
       'auto': { overscrollBehavior: 'auto' },
+      // @ts-expect-error
       'contain': { overscrollBehavior: 'contain' },
+      // @ts-expect-error
       'none': { overscrollBehavior: 'none' },
     },
 
     userSelect: {
+      // @ts-expect-error
       'none': { userSelect: 'none' },
+      // @ts-expect-error
       'text': { userSelect: 'text' },
+      // @ts-expect-error
       'all': { userSelect: 'all' },
+      // @ts-expect-error
       'auto': { userSelect: 'auto' },
     },
 
@@ -411,13 +439,19 @@ export const createViewBase = <C extends Surfaced>(surfaced: C) => surfaced(View
       'isolate': { isolation: 'isolate' },
     },
     overscrollBehaviorX: {
+      // @ts-expect-error
       'auto': { overscrollBehaviorX: 'auto' },
+      // @ts-expect-error
       'contain': { overscrollBehaviorX: 'contain' },
+      // @ts-expect-error
       'none': { overscrollBehaviorX: 'none' },
     },
     overscrollBehaviorY: {
+      // @ts-expect-error
       'auto': { overscrollBehaviorY: 'auto' },
+      // @ts-expect-error
       'contain': { overscrollBehaviorY: 'contain' },
+      // @ts-expect-error
       'none': { overscrollBehaviorY: 'none' },
     },
     rotation: surfaced.any({ attribute: 'rotation', string: true }),

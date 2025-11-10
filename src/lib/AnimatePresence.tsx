@@ -62,7 +62,9 @@ export const AnimatePresence: React.FC<
 
   console.log('ANIMATING KEYS', Array.from(store.animatingKeys));
 
+  // @ts-expect-error
   const childrenArr: React.ReactElement[] =
+  // @ts-expect-error
     props.children?.length > -1 ? props.children : [props.children];
   const children: React.ReactElement[] = childrenArr
     .filter((c) => !!c)

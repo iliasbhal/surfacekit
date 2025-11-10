@@ -209,7 +209,8 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
             cache: new Map<any, StyleFor<any>>(),
             stylesheets: {} as Record<
               string,
-              StyleSheet.NamedStyles<{ variant: string } | {}>
+              // StyleSheet.NamedStyles<{ variant: string } | {}>
+              any
             >,
 
             overridden: [] as boolean[],
@@ -224,7 +225,7 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
               return alreadyCompiled;
             }
 
-            const compiledTokens = getCompiledTokens(tokens, anyConfig);
+            const compiledTokens = getCompiledTokens(tokens, anyConfig as any);
             variantHandler.context.flattenedTokens.set(tokens, compiledTokens);
             return compiledTokens;
           },
@@ -407,10 +408,8 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
             }
 
             return opts.raw
-              ? // @ts-expect-error
-                stylesheets[stylesheetKey].raw
-              : // @ts-expect-error
-                stylesheets[stylesheetKey].variant;
+              ? stylesheets[stylesheetKey].raw
+              : stylesheets[stylesheetKey].variant;
           },
         };
 

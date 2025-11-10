@@ -81,7 +81,7 @@ export const useAnimatedStylesheet = (
     sharedValues.init(key, initial);
 
     state.animationEffects.set(key, () => {
-      const isAnimating = state.pendingTransitions.size > 0;
+      const isAnimating = state.pendingTransitions.length > 0;
       if (!isAnimating) {
         presence?.lifecycle?.onAnimationStart?.();
       }

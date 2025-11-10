@@ -10,7 +10,13 @@ export default defineConfig({
   treeshake: true,
   minify: false,
   external: [
-    'superjson'
+    "react-native",
+    "expo-font",
+    "expo-screen-orientation",
+    "react-native-gesture-handler",
+    "react-native-keyboard-controller",
+    "react-native-reanimated",
+    "react-native-worklets",
   ],
   esbuildOptions(options) {
     options.platform = 'browser'
