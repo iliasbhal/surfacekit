@@ -10,6 +10,7 @@ export default defineConfig({
   treeshake: true,
   minify: false,
   external: [
+    "react",
     "react-native",
     "expo-font",
     "expo-screen-orientation",
