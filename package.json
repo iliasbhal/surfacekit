@@ -1,7 +1,7 @@
 {
   "private": false,
   "name": "surfacekit",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Lightning-fast, seamless UI creation for React and React Native.",
   "author": "ilias.bhal@gmail.com",
   "license": "MIT",
@@ -45,6 +45,6 @@
   },
   "files": [
     "dist",
-    "src"
+    "src/**/*"
   ]
 }
