@@ -1,7 +1,7 @@
 <img src="./assets/hero.svg" />
 <div style="margin-bottom: 30px"></div>
 
-# SurfaceKit  ▉▊▋▌▍▎▏
+# SurfaceKit  ▉▊▋▍▎▏
 
 > Lightning-fast, seamless UI creation for React and React Native.
 
