@@ -1,7 +1,7 @@
 'use strict';
 
 var expoFont = require('expo-font');
-var React9 = require('react');
+var React10 = require('react');
 var reactNative = require('react-native');
 var reactNativeGestureHandler = require('react-native-gesture-handler');
 var Animated = require('react-native-reanimated');
@@ -11,7 +11,7 @@ var reactNativeKeyboardController = require('react-native-keyboard-controller');
 
 function _interopDefault (e) { return e && e.__esModule ? e : { default: e }; }
 
-var React9__default = /*#__PURE__*/_interopDefault(React9);
+var React10__default = /*#__PURE__*/_interopDefault(React10);
 var Animated__default = /*#__PURE__*/_interopDefault(Animated);
 
 // src/surface.tsx
@@ -20,13 +20,13 @@ var getAnimatedPresenceProps = (props) => {
   const animtePresencProps = props[ANIMATE_PRESENCE_PROPS_KEY] || {};
   return animtePresencProps;
 };
-var AnimatePresenceContext = React9__default.default.createContext(null);
+var AnimatePresenceContext = React10__default.default.createContext(null);
 var AnimatePresence = (props) => {
   console.log("ANIMATE PRESENCE ENTER");
   const mode = props.mode || "sync";
   const propagate = props.propagate || false;
-  const parentPresence = React9__default.default.useContext(AnimatePresenceContext);
-  const [store, setStore] = React9__default.default.useState(() => ({
+  const parentPresence = React10__default.default.useContext(AnimatePresenceContext);
+  const [store, setStore] = React10__default.default.useState(() => ({
     isInitial: true,
     renderedChildKeys: /* @__PURE__ */ new Set(),
     enteredKeys: /* @__PURE__ */ new Set(),
@@ -105,7 +105,7 @@ var AnimatePresence = (props) => {
     };
     store.renderedChildKeys.add(child.key);
     store.contextByKey.set(child.key, context);
-    return /* @__PURE__ */ React9__default.default.createElement(AnimatePresenceContext.Provider, { key: child.key, value: { ...context } }, child);
+    return /* @__PURE__ */ React10__default.default.createElement(AnimatePresenceContext.Provider, { key: child.key, value: { ...context } }, child);
   });
   const exitingChildrenKeys = /* @__PURE__ */ new Set();
   store.contextByKey.forEach((context) => {
@@ -117,7 +117,7 @@ var AnimatePresence = (props) => {
     if (childStillInTree) return;
     console.log("EXITING ELEMENT", childKey);
     exitingChildrenKeys.add(childKey);
-    const animatedExitingElement = /* @__PURE__ */ React9__default.default.createElement(
+    const animatedExitingElement = /* @__PURE__ */ React10__default.default.createElement(
       AnimatePresenceContext.Provider,
       {
         key: childKey,
@@ -143,7 +143,7 @@ var AnimatePresence = (props) => {
       const isPresentBeforeAnyExit = store.keysBeforeExit.has(child.key);
       if (mode === "wait" && !isPresentBeforeAnyExit) {
         console.log("REMOVED", child.key);
-        children[index] = /* @__PURE__ */ React9__default.default.createElement(React9__default.default.Fragment, null);
+        children[index] = /* @__PURE__ */ React10__default.default.createElement(React10__default.default.Fragment, null);
       }
     });
   }
@@ -207,7 +207,7 @@ var conditionalWrap = (content, wrappers) => {
   }
   return result;
 };
-var surfaceContext = React9__default.default.createContext(null);
+var surfaceContext = React10__default.default.createContext(null);
 surfaceContext.Provider;
 
 // src/lib/deepAssign.ts
@@ -253,15 +253,15 @@ var Natural = (value, callback) => Animated.withTiming(
   callback
 );
 function useDynamicSharedValues() {
-  const ref = React9__default.default.useRef({}).current;
-  React9__default.default.useEffect(() => {
+  const ref = React10__default.default.useRef({}).current;
+  React10__default.default.useEffect(() => {
     return () => {
       Object.values(ref).forEach((value) => {
         Animated.cancelAnimation(value.shared);
       });
     };
   }, []);
-  React9__default.default.useEffect(() => {
+  React10__default.default.useEffect(() => {
   });
   const order = [];
   return {
@@ -364,7 +364,7 @@ var styleDefaults = {
   borderBottomRightRadius: 0
 };
 var useAnimatedStylesheet = (componentProps, presence) => {
-  const [state] = React9__default.default.useState(() => ({
+  const [state] = React10__default.default.useState(() => ({
     pendingTransitions: [],
     animationEffects: /* @__PURE__ */ new Map()
     // completedAnimations: new Set<string>(),
@@ -400,7 +400,7 @@ var useAnimatedStylesheet = (componentProps, presence) => {
       });
     });
   };
-  React9__default.default.useEffect(() => {
+  React10__default.default.useEffect(() => {
     Array.from(state.animationEffects.values()).forEach((effect) => {
       effect();
     });
@@ -467,7 +467,7 @@ reactNative.StyleSheet.create({
   }
 }).base;
 var useRerenderRef = (initialValue) => {
-  const [state, rerender] = React9__default.default.useState(() => ({ current: initialValue() }));
+  const [state, rerender] = React10__default.default.useState(() => ({ current: initialValue() }));
   return {
     current: state.current,
     rerender: () => rerender((prev) => ({ ...prev }))
@@ -475,10 +475,10 @@ var useRerenderRef = (initialValue) => {
 };
 
 // src/lib/useComponentOverrides.tsx
-var InteractionStateContext = React9__default.default.createContext(null);
+var InteractionStateContext = React10__default.default.createContext(null);
 var InteractionStateProvider = (props) => {
-  const parentContext = React9__default.default.useContext(InteractionStateContext) || {};
-  return /* @__PURE__ */ React9__default.default.createElement(
+  const parentContext = React10__default.default.useContext(InteractionStateContext) || {};
+  return /* @__PURE__ */ React10__default.default.createElement(
     InteractionStateContext.Provider,
     {
       value: {
@@ -490,7 +490,7 @@ var InteractionStateProvider = (props) => {
   );
 };
 var useInteractionStateContext = (config) => {
-  const parentContext = React9__default.default.useContext(InteractionStateContext) || {};
+  const parentContext = React10__default.default.useContext(InteractionStateContext) || {};
   const state = parentContext[config.stateId];
   return state;
 };
@@ -612,10 +612,10 @@ var useComponentOverrides = (props) => {
   current.activateFocus = defaultActive;
   return current;
 };
-var OrientationContext = React9.createContext(null);
+var OrientationContext = React10.createContext(null);
 var OrientationProvider = ({ children }) => {
-  const [orientation, setOrientation] = React9.useState(null);
-  React9.useEffect(() => {
+  const [orientation, setOrientation] = React10.useState(null);
+  React10.useEffect(() => {
     let isMounted = true;
     const getOrientation = async () => {
       const currentOrientation = await expoScreenOrientation.getOrientationAsync();
@@ -634,10 +634,10 @@ var OrientationProvider = ({ children }) => {
       expoScreenOrientation.removeOrientationChangeListener(subscription);
     };
   }, []);
-  return /* @__PURE__ */ React.createElement(OrientationContext.Provider, { value: orientation }, children);
+  return /* @__PURE__ */ React10__default.default.createElement(OrientationContext.Provider, { value: orientation }, children);
 };
 var useDeviceOrientation = () => {
-  const orientation = React9.useContext(OrientationContext);
+  const orientation = React10.useContext(OrientationContext);
   expoScreenOrientation.Orientation.LANDSCAPE_LEFT;
   expoScreenOrientation.Orientation.LANDSCAPE_RIGHT;
   expoScreenOrientation.Orientation.PORTRAIT_DOWN;
@@ -648,13 +648,13 @@ var useDeviceOrientation = () => {
   if (isPortrait) return "portrait";
   return "portrait";
 };
-var DimensionsContext = React9__default.default.createContext(null);
+var DimensionsContext = React10__default.default.createContext(null);
 var ScreenDimensionProvider = (props) => {
   const dimensions = useScreenDimensions();
-  return /* @__PURE__ */ React9__default.default.createElement(DimensionsContext.Provider, { value: dimensions }, props.children);
+  return /* @__PURE__ */ React10__default.default.createElement(DimensionsContext.Provider, { value: dimensions }, props.children);
 };
 var useScreenDimensions = () => {
-  const dimensionCtx = React9__default.default.useContext(DimensionsContext);
+  const dimensionCtx = React10__default.default.useContext(DimensionsContext);
   if (dimensionCtx) {
     return dimensionCtx;
   }
@@ -795,11 +795,11 @@ var createSurfaced = () => {
     };
   };
   const useSurfaceTheme = () => {
-    const context = React9__default.default.useContext(surfaceContext);
+    const context = React10__default.default.useContext(surfaceContext);
     return context;
   };
   const ThemeProvider = (props) => {
-    return /* @__PURE__ */ React9__default.default.createElement(ScreenDimensionProvider, null, /* @__PURE__ */ React9__default.default.createElement(OrientationProvider, null, /* @__PURE__ */ React9__default.default.createElement(reactNativeKeyboardController.KeyboardProvider, null, /* @__PURE__ */ React9__default.default.createElement(surfaceContext.Provider, { value: props.theme }, props.children))));
+    return /* @__PURE__ */ React10__default.default.createElement(ScreenDimensionProvider, null, /* @__PURE__ */ React10__default.default.createElement(OrientationProvider, null, /* @__PURE__ */ React10__default.default.createElement(reactNativeKeyboardController.KeyboardProvider, null, /* @__PURE__ */ React10__default.default.createElement(surfaceContext.Provider, { value: props.theme }, props.children))));
   };
   const configByComponent = /* @__PURE__ */ new Map();
   const surfaced = (Component) => {
@@ -1037,7 +1037,7 @@ var createSurfaced = () => {
     return {
       as: (Component2) => {
         return (props) => {
-          return /* @__PURE__ */ React9__default.default.createElement(Component, { as: Component2, ...props });
+          return /* @__PURE__ */ React10__default.default.createElement(Component, { as: Component2, ...props });
         };
       },
       with: (styleFactory) => {
@@ -1050,9 +1050,9 @@ var createSurfaced = () => {
         };
         const component = (props) => {
           const theme = useSurfaceTheme();
-          const presence = React9__default.default.useContext(AnimatePresenceContext);
+          const presence = React10__default.default.useContext(AnimatePresenceContext);
           const styles = styleManager.getStylesheetForTheme(theme);
-          const compRef = React9__default.default.useRef(null);
+          const compRef = React10__default.default.useRef(null);
           const overridesHanlder = useComponentOverrides(props);
           const styleProp = [styles.baseStylesheet];
           const customStylesFunctions = [];
@@ -1167,7 +1167,7 @@ var createSurfaced = () => {
           const ComponentToRender = isAnimated ? getAnimatedComp(rootComponent) : rootComponent;
           presence?.lifecycle?.onRender?.();
           return conditionalWrap(
-            /* @__PURE__ */ React9__default.default.createElement(
+            /* @__PURE__ */ React10__default.default.createElement(
               ComponentToRender,
               {
                 ...componentProps,
@@ -1184,8 +1184,8 @@ var createSurfaced = () => {
               }
             ),
             [
-              componentProps.gesture && ((props2) => /* @__PURE__ */ React9__default.default.createElement(reactNativeGestureHandler.GestureDetector, { gesture: componentProps.gesture, ...props2 })),
-              props.stateId && ((props2) => /* @__PURE__ */ React9__default.default.createElement(
+              componentProps.gesture && ((props2) => /* @__PURE__ */ React10__default.default.createElement(reactNativeGestureHandler.GestureDetector, { gesture: componentProps.gesture, ...props2 })),
+              props.stateId && ((props2) => /* @__PURE__ */ React10__default.default.createElement(
                 Interaction.Provider,
                 {
                   stateId: props2.stateId,
@@ -1790,10 +1790,13 @@ var createTextBase = (surfaced) => surfaced(reactNative.Text).with((tokens) => (
 exports.ANIMATE_PRESENCE_PROPS_KEY = ANIMATE_PRESENCE_PROPS_KEY;
 exports.AnimatePresence = AnimatePresence;
 exports.AnimatePresenceContext = AnimatePresenceContext;
+exports.Interaction = Interaction;
+exports.ScreenDimensionProvider = ScreenDimensionProvider;
 exports.createSurfaced = createSurfaced;
 exports.createTextBase = createTextBase;
 exports.createTheme = createTheme;
 exports.createViewBase = createViewBase;
 exports.getAnimatedPresenceProps = getAnimatedPresenceProps;
+exports.useScreenDimensions = useScreenDimensions;
 //# sourceMappingURL=index.cjs.map
 //# sourceMappingURL=index.cjs.map

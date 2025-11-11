@@ -1,3 +1,4 @@
+import React from 'react';
 import { Orientation, addOrientationChangeListener, getOrientationAsync, removeOrientationChangeListener } from 'expo-screen-orientation';
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 

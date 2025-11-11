@@ -1,7 +1,7 @@
 {
   "private": false,
   "name": "surfacekit",
-  "version": "0.0.6",
+  "version": "0.0.8",
   "description": "Lightning-fast, seamless UI creation for React and React Native.",
   "author": "ilias.bhal@gmail.com",
   "license": "MIT",

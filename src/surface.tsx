@@ -33,6 +33,10 @@ import { KeyboardProvider } from "./lib/useKeyboardHeight";
 import { useMediaQuery } from "./lib/useMediaQuery";
 import { ScreenDimensionProvider } from "./ScreenDimension";
 
+export {
+  Interaction,
+} from "./lib/useComponentOverrides";
+
 export interface SurfaceTheme extends Record<string, any> {
   fonts: Record<string, Record<string, any>>
   breakpoints: Record<string, any>

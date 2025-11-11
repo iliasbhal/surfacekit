@@ -42,7 +42,7 @@ describe('Surface Overrides', () => {
         <Flex 
           width={100} 
           height={"space3"}
-          with={{ width: 'space3' }}
+          overrides={() =>({ width: 'space3' })}
         />
       </surfaced.Provider>
     );
@@ -61,7 +61,7 @@ describe('Surface Overrides', () => {
         <Flex 
           width={100} 
           height={"space3"}
-          with={{ width: 'space0' }}
+          overrides={() =>({ width: 'space0' })}
         />
       </surfaced.Provider>
     );
@@ -81,7 +81,7 @@ describe('Surface Overrides', () => {
         <Flex 
           width={100} 
           height={"space3"}
-          with={{ style:{ width: 50 } }}
+          overrides={() =>({ style:{ width: 50 } })}
         />
       </surfaced.Provider>
     );
@@ -102,7 +102,7 @@ describe('Surface Overrides', () => {
         <Flex 
           width={100} 
           height={"space3"}
-          with={{ style: { paddingTop: 10 } }}
+          overrides={() =>({ style: { paddingTop: 10 } })}
         />
       </surfaced.Provider>
     );
@@ -123,11 +123,11 @@ describe('Surface Overrides', () => {
         <Flex 
           width={100} 
           height={"space3"}
-          with={[
+          overrides={() =>([
             { style: { paddingTop: 10 } },
             { height: 33 },
             { paddingTop: 33 },
-          ]}
+          ])}
         />
       </surfaced.Provider>
     );

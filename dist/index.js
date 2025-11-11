@@ -1,6 +1,6 @@
 import { useFonts } from 'expo-font';
-import React9, { createContext, useContext, useState, useEffect } from 'react';
-import { StyleSheet, View, Text, useWindowDimensions, Platform } from 'react-native';
+import React10, { createContext, useContext, useState, useEffect } from 'react';
+import { StyleSheet, useWindowDimensions, View, Text, Platform } from 'react-native';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, cancelAnimation, makeMutable, withDelay, withTiming, ReduceMotion, Easing } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
@@ -13,13 +13,13 @@ var getAnimatedPresenceProps = (props) => {
   const animtePresencProps = props[ANIMATE_PRESENCE_PROPS_KEY] || {};
   return animtePresencProps;
 };
-var AnimatePresenceContext = React9.createContext(null);
+var AnimatePresenceContext = React10.createContext(null);
 var AnimatePresence = (props) => {
   console.log("ANIMATE PRESENCE ENTER");
   const mode = props.mode || "sync";
   const propagate = props.propagate || false;
-  const parentPresence = React9.useContext(AnimatePresenceContext);
-  const [store, setStore] = React9.useState(() => ({
+  const parentPresence = React10.useContext(AnimatePresenceContext);
+  const [store, setStore] = React10.useState(() => ({
     isInitial: true,
     renderedChildKeys: /* @__PURE__ */ new Set(),
     enteredKeys: /* @__PURE__ */ new Set(),
@@ -98,7 +98,7 @@ var AnimatePresence = (props) => {
     };
     store.renderedChildKeys.add(child.key);
     store.contextByKey.set(child.key, context);
-    return /* @__PURE__ */ React9.createElement(AnimatePresenceContext.Provider, { key: child.key, value: { ...context } }, child);
+    return /* @__PURE__ */ React10.createElement(AnimatePresenceContext.Provider, { key: child.key, value: { ...context } }, child);
   });
   const exitingChildrenKeys = /* @__PURE__ */ new Set();
   store.contextByKey.forEach((context) => {
@@ -110,7 +110,7 @@ var AnimatePresence = (props) => {
     if (childStillInTree) return;
     console.log("EXITING ELEMENT", childKey);
     exitingChildrenKeys.add(childKey);
-    const animatedExitingElement = /* @__PURE__ */ React9.createElement(
+    const animatedExitingElement = /* @__PURE__ */ React10.createElement(
       AnimatePresenceContext.Provider,
       {
         key: childKey,
@@ -136,7 +136,7 @@ var AnimatePresence = (props) => {
       const isPresentBeforeAnyExit = store.keysBeforeExit.has(child.key);
       if (mode === "wait" && !isPresentBeforeAnyExit) {
         console.log("REMOVED", child.key);
-        children[index] = /* @__PURE__ */ React9.createElement(React9.Fragment, null);
+        children[index] = /* @__PURE__ */ React10.createElement(React10.Fragment, null);
       }
     });
   }
@@ -200,7 +200,7 @@ var conditionalWrap = (content, wrappers) => {
   }
   return result;
 };
-var surfaceContext = React9.createContext(null);
+var surfaceContext = React10.createContext(null);
 surfaceContext.Provider;
 
 // src/lib/deepAssign.ts
@@ -246,15 +246,15 @@ var Natural = (value, callback) => withTiming(
   callback
 );
 function useDynamicSharedValues() {
-  const ref = React9.useRef({}).current;
-  React9.useEffect(() => {
+  const ref = React10.useRef({}).current;
+  React10.useEffect(() => {
     return () => {
       Object.values(ref).forEach((value) => {
         cancelAnimation(value.shared);
       });
     };
   }, []);
-  React9.useEffect(() => {
+  React10.useEffect(() => {
   });
   const order = [];
   return {
@@ -357,7 +357,7 @@ var styleDefaults = {
   borderBottomRightRadius: 0
 };
 var useAnimatedStylesheet = (componentProps, presence) => {
-  const [state] = React9.useState(() => ({
+  const [state] = React10.useState(() => ({
     pendingTransitions: [],
     animationEffects: /* @__PURE__ */ new Map()
     // completedAnimations: new Set<string>(),
@@ -393,7 +393,7 @@ var useAnimatedStylesheet = (componentProps, presence) => {
       });
     });
   };
-  React9.useEffect(() => {
+  React10.useEffect(() => {
     Array.from(state.animationEffects.values()).forEach((effect) => {
       effect();
     });
@@ -460,7 +460,7 @@ StyleSheet.create({
   }
 }).base;
 var useRerenderRef = (initialValue) => {
-  const [state, rerender] = React9.useState(() => ({ current: initialValue() }));
+  const [state, rerender] = React10.useState(() => ({ current: initialValue() }));
   return {
     current: state.current,
     rerender: () => rerender((prev) => ({ ...prev }))
@@ -468,10 +468,10 @@ var useRerenderRef = (initialValue) => {
 };
 
 // src/lib/useComponentOverrides.tsx
-var InteractionStateContext = React9.createContext(null);
+var InteractionStateContext = React10.createContext(null);
 var InteractionStateProvider = (props) => {
-  const parentContext = React9.useContext(InteractionStateContext) || {};
-  return /* @__PURE__ */ React9.createElement(
+  const parentContext = React10.useContext(InteractionStateContext) || {};
+  return /* @__PURE__ */ React10.createElement(
     InteractionStateContext.Provider,
     {
       value: {
@@ -483,7 +483,7 @@ var InteractionStateProvider = (props) => {
   );
 };
 var useInteractionStateContext = (config) => {
-  const parentContext = React9.useContext(InteractionStateContext) || {};
+  const parentContext = React10.useContext(InteractionStateContext) || {};
   const state = parentContext[config.stateId];
   return state;
 };
@@ -627,7 +627,7 @@ var OrientationProvider = ({ children }) => {
       removeOrientationChangeListener(subscription);
     };
   }, []);
-  return /* @__PURE__ */ React.createElement(OrientationContext.Provider, { value: orientation }, children);
+  return /* @__PURE__ */ React10.createElement(OrientationContext.Provider, { value: orientation }, children);
 };
 var useDeviceOrientation = () => {
   const orientation = useContext(OrientationContext);
@@ -641,13 +641,13 @@ var useDeviceOrientation = () => {
   if (isPortrait) return "portrait";
   return "portrait";
 };
-var DimensionsContext = React9.createContext(null);
+var DimensionsContext = React10.createContext(null);
 var ScreenDimensionProvider = (props) => {
   const dimensions = useScreenDimensions();
-  return /* @__PURE__ */ React9.createElement(DimensionsContext.Provider, { value: dimensions }, props.children);
+  return /* @__PURE__ */ React10.createElement(DimensionsContext.Provider, { value: dimensions }, props.children);
 };
 var useScreenDimensions = () => {
-  const dimensionCtx = React9.useContext(DimensionsContext);
+  const dimensionCtx = React10.useContext(DimensionsContext);
   if (dimensionCtx) {
     return dimensionCtx;
   }
@@ -788,11 +788,11 @@ var createSurfaced = () => {
     };
   };
   const useSurfaceTheme = () => {
-    const context = React9.useContext(surfaceContext);
+    const context = React10.useContext(surfaceContext);
     return context;
   };
   const ThemeProvider = (props) => {
-    return /* @__PURE__ */ React9.createElement(ScreenDimensionProvider, null, /* @__PURE__ */ React9.createElement(OrientationProvider, null, /* @__PURE__ */ React9.createElement(KeyboardProvider, null, /* @__PURE__ */ React9.createElement(surfaceContext.Provider, { value: props.theme }, props.children))));
+    return /* @__PURE__ */ React10.createElement(ScreenDimensionProvider, null, /* @__PURE__ */ React10.createElement(OrientationProvider, null, /* @__PURE__ */ React10.createElement(KeyboardProvider, null, /* @__PURE__ */ React10.createElement(surfaceContext.Provider, { value: props.theme }, props.children))));
   };
   const configByComponent = /* @__PURE__ */ new Map();
   const surfaced = (Component) => {
@@ -1030,7 +1030,7 @@ var createSurfaced = () => {
     return {
       as: (Component2) => {
         return (props) => {
-          return /* @__PURE__ */ React9.createElement(Component, { as: Component2, ...props });
+          return /* @__PURE__ */ React10.createElement(Component, { as: Component2, ...props });
         };
       },
       with: (styleFactory) => {
@@ -1043,9 +1043,9 @@ var createSurfaced = () => {
         };
         const component = (props) => {
           const theme = useSurfaceTheme();
-          const presence = React9.useContext(AnimatePresenceContext);
+          const presence = React10.useContext(AnimatePresenceContext);
           const styles = styleManager.getStylesheetForTheme(theme);
-          const compRef = React9.useRef(null);
+          const compRef = React10.useRef(null);
           const overridesHanlder = useComponentOverrides(props);
           const styleProp = [styles.baseStylesheet];
           const customStylesFunctions = [];
@@ -1160,7 +1160,7 @@ var createSurfaced = () => {
           const ComponentToRender = isAnimated ? getAnimatedComp(rootComponent) : rootComponent;
           presence?.lifecycle?.onRender?.();
           return conditionalWrap(
-            /* @__PURE__ */ React9.createElement(
+            /* @__PURE__ */ React10.createElement(
               ComponentToRender,
               {
                 ...componentProps,
@@ -1177,8 +1177,8 @@ var createSurfaced = () => {
               }
             ),
             [
-              componentProps.gesture && ((props2) => /* @__PURE__ */ React9.createElement(GestureDetector, { gesture: componentProps.gesture, ...props2 })),
-              props.stateId && ((props2) => /* @__PURE__ */ React9.createElement(
+              componentProps.gesture && ((props2) => /* @__PURE__ */ React10.createElement(GestureDetector, { gesture: componentProps.gesture, ...props2 })),
+              props.stateId && ((props2) => /* @__PURE__ */ React10.createElement(
                 Interaction.Provider,
                 {
                   stateId: props2.stateId,
@@ -1780,6 +1780,6 @@ var createTextBase = (surfaced) => surfaced(Text).with((tokens) => ({
   }
 }));
 
-export { ANIMATE_PRESENCE_PROPS_KEY, AnimatePresence, AnimatePresenceContext, createSurfaced, createTextBase, createTheme, createViewBase, getAnimatedPresenceProps };
+export { ANIMATE_PRESENCE_PROPS_KEY, AnimatePresence, AnimatePresenceContext, Interaction, ScreenDimensionProvider, createSurfaced, createTextBase, createTheme, createViewBase, getAnimatedPresenceProps, useScreenDimensions };
 //# sourceMappingURL=index.js.map
 //# sourceMappingURL=index.js.map
