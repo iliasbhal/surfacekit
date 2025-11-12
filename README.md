@@ -18,7 +18,7 @@
 - [Wrap Your App With the Provider](#wrap-your-app-with-the-provider)
 - [Build Surfaces With `.with` Factories](#build-surfaces-with-with-factories)
 - [Variants 101](#variants-101)
-- [Dynamic Variants With `surfaced.any`](#dynamic-variants-with-surfacedany)
+- [Dynamic Variants With `attrs.any`](#dynamic-variants-with-attrsany)
 - [Token Lookups and Negative Values](#token-lookups-and-negative-values)
 - [Composing Surfaces](#composing-surfaces)
 - [Per-Instance Overrides](#per-instance-overrides)
@@ -75,26 +75,26 @@ import { View, Text } from 'react-native';
 import { surfaced } from './surfaced';
 import { theme } from './theme';
 
-const Card = surfaced(View).with((tokens) => ({
-  padding: tokens.spacing.space6,
-  backgroundColor: tokens.colors.gray[900],
-  borderRadius: tokens.borderRadius.lg,
+const Card = surfaced(View).with(({ theme, attrs }) => ({
+  padding: theme.spacing.space6,
+  backgroundColor: theme.colors.gray[900],
+  borderRadius: theme.borderRadius.lg,
   variants: {
-    elevation: surfaced.any({ attribute: 'elevation', number: true }),
+    elevation: attrs.any({ attribute: 'elevation', number: true }),
     tone: {
-      primary: { backgroundColor: tokens.colors.blue[600] },
-      neutral: { backgroundColor: tokens.colors.gray[800] },
+      primary: { backgroundColor: theme.colors.blue[600] },
+      neutral: { backgroundColor: theme.colors.gray[800] },
     },
   },
 }));
 
-const Heading = surfaced(Text).with((tokens) => ({
+const Heading = surfaced(Text).with(({ theme, attrs }) => ({
   variants: {
     intent: {
-      primary: { color: tokens.colors.white },
-      secondary: { color: tokens.colors.gray[300] },
+      primary: { color: theme.colors.white },
+      secondary: { color: theme.colors.gray[300] },
     },
-    fontSize: surfaced.any({ attribute: 'fontSize', tokens: tokens.fontSize, number: true }),
+    fontSize: attrs.any({ attribute: 'fontSize', tokens: theme.fontSize, number: true }),
   },
 }));
 
@@ -125,17 +125,17 @@ Your theme can be any nested object. SurfaceKit preserves typing, so using dot-s
 
 ## Build Surfaces With `.with` Factories
 
-Call `surfaced(Component).with(factory)` to describe the base style for a component. The factory receives the current theme. Return regular style properties plus a `variants` map, optional `dynamic` style function, and optional `transition` / `animation` configuration.
+Call `surfaced(Component).with(factory)` to describe the base style for a component. The factory receives a context object with `theme` (your theme tokens) and `attrs` (helpers like `attrs.any` and `attrs.boolean`). Return regular style properties plus a `variants` map, optional `dynamic` style function, and optional `transition` / `animation` configuration.
 
 ```tsx
-const Flex = surfaced(View).with((tokens) => ({
+const Flex = surfaced(View).with(({ theme, attrs }) => ({
   flexDirection: 'row',
   alignItems: 'center',
   variants: {
     danger: {
-      true: { backgroundColor: tokens.colors.red[300] },
+      true: { backgroundColor: theme.colors.red[300] },
     },
-    gap: surfaced.any({ attribute: 'gap', tokens: tokens.spacing, number: true, percentage: true }),
+    gap: attrs.any({ attribute: 'gap', tokens: theme.spacing, number: true, percentage: true }),
   },
 }));
 ```
@@ -148,11 +148,11 @@ Variants let you expose new props that control styles without leaking implementa
 
 - **Boolean variants** – provide a `true` or `false` key.
 - **String/enum variants** – supply object keys for each option.
-- **Boolean helper** – `surfaced.boolean({ ...style })` returns a `{ true: style }` map.
+- **Boolean helper** – `attrs.boolean({ ...style })` returns a `{ true: style }` map.
 - **Order matters** – when multiple variants touch the same property, the last prop wins. `<Flex layer2 layer1 />` applies `layer1` last.
 
 ```tsx
-const Badge = surfaced(View).with((theme) => ({
+const Badge = surfaced(View).with(({ theme, attrs }) => ({
   paddingHorizontal: theme.spacing.space3,
   paddingVertical: theme.spacing.space1,
   borderRadius: theme.borderRadius.full,
@@ -172,9 +172,9 @@ const Badge = surfaced(View).with((theme) => ({
 <Badge status="success" pill />
 ```
 
-## Dynamic Variants With `surfaced.any`
+## Dynamic Variants With `attrs.any`
 
-`surfaced.any(config)` turns a configuration object into a type-safe variant. Common options include:
+`attrs.any(config)` turns a configuration object into a type-safe variant. Use it within the `.with` factory by accessing it from the `attrs` parameter. Common options include:
 
 | Option | Purpose |
 | --- | --- |
@@ -190,14 +190,14 @@ const Badge = surfaced(View).with((theme) => ({
 Examples pulled from the test suite:
 
 ```tsx
-const Spacer = surfaced(View).with((tokens) => ({
+const Spacer = surfaced(View).with(({ theme, attrs }) => ({
   variants: {
-    gap: surfaced.any({ attribute: 'gap', tokens: tokens.spacing, number: true, percentage: true }),
-    size: surfaced.any({
-      tokens: tokens.spacing,
+    gap: attrs.any({ attribute: 'gap', tokens: theme.spacing, number: true, percentage: true }),
+    size: attrs.any({
+      tokens: theme.spacing,
       compute: (value) => ({ padding: value / 2 }),
     }),
-    rotate: surfaced.any({ accumulate: 'transform', attribute: 'rotate', number: true, angle: true }),
+    rotate: attrs.any({ accumulate: 'transform', attribute: 'rotate', number: true, angle: true }),
   },
 }));
 ```
