@@ -10,504 +10,1047 @@ const transform = (style: any, config: any) => {
   if (!style.transform) style.transform = [];
 
   const transformName = config.config.attribute || key;
-  style.transform.push({ 
+  style.transform.push({
     [transformName]: value,
   });
 };
 
-export const createViewBase = <C extends Surfaced>(surfaced: C) => surfaced(View).with((tokens) => ({
-  variants: {
-    // @ts-expect-error
-    position: Position,
-    zIndex: surfaced.any({ attribute: 'zIndex', number: true, }),
-    z: surfaced.any({ attribute: 'zIndex', number: true, }),
-    absoluteFill: { true: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 } },
-    absolute: { true: Position.absolute },
-    // @ts-expect-error
-    fixed: { true: Position.fixed },
-    // @ts-expect-error
-    sticky: { true: Position.sticky },
-    relative: { true: Position.relative },
-    static: { true: Position.static },
-    top: surfaced.any({ attribute: 'top', number: true, tokens: tokens.size }),
-    bottom: surfaced.any({ attribute: 'bottom', number: true, tokens: tokens.size }),
-    left: surfaced.any({ attribute: 'left', number: true, tokens: tokens.size }),
-    right: surfaced.any({ attribute: 'right', number: true, tokens: tokens.size }),
-    start: surfaced.any({ attribute: 'start', number: true, tokens: tokens.size }),
-    end: surfaced.any({ attribute: 'end', number: true, tokens: tokens.size }),
-
-    // Padding
-    padding: surfaced.any({ attribute: 'padding', number: true, tokens: tokens.size }),
-    paddingHorizontal: surfaced.any({ attribute: 'paddingHorizontal', number: true, tokens: tokens.size }),
-    paddingVertical: surfaced.any({ attribute: 'paddingVertical', number: true, tokens: tokens.size }),
-    paddingTop: surfaced.any({ attribute: 'paddingTop', number: true, tokens: tokens.size }),
-    paddingBottom: surfaced.any({ attribute: 'paddingBottom', number: true, tokens: tokens.size }),
-    paddingLeft: surfaced.any({ attribute: 'paddingLeft', number: true, tokens: tokens.size }),
-    paddingRight: surfaced.any({ attribute: 'paddingRight', number: true, tokens: tokens.size }),
-    p: surfaced.any({ attribute: 'padding', number: true, tokens: tokens.size }),
-    px: surfaced.any({ attribute: 'paddingHorizontal', number: true, tokens: tokens.size }),
-    py: surfaced.any({ attribute: 'paddingVertical', number: true, tokens: tokens.size }),
-    pt: surfaced.any({ attribute: 'paddingTop', number: true, tokens: tokens.size }),
-    pb: surfaced.any({ attribute: 'paddingBottom', number: true, tokens: tokens.size }),
-    pl: surfaced.any({ attribute: 'paddingLeft', number: true, tokens: tokens.size }),
-    pr: surfaced.any({ attribute: 'paddingRight', number: true, tokens: tokens.size }),
-    paddingBlock: surfaced.any({ attribute: 'paddingBlockStart', number: true, tokens: tokens.size }),
-    paddingBlockStart: surfaced.any({ attribute: 'paddingBlockStart', number: true, tokens: tokens.size }),
-    paddingBlockEnd: surfaced.any({ attribute: 'paddingBlockEnd', number: true, tokens: tokens.size }),
-    paddingInline: surfaced.any({ attribute: 'paddingInline', number: true, tokens: tokens.size }),
-    paddingInlineStart: surfaced.any({ attribute: 'paddingInlineStart', number: true, tokens: tokens.size }),
-    paddingInlineEnd: surfaced.any({ attribute: 'paddingInlineEnd', number: true, tokens: tokens.size }),
-    paddingStart: surfaced.any({ attribute: 'paddingStart', number: true, tokens: tokens.size }),
-    paddingEnd: surfaced.any({ attribute: 'paddingEnd', number: true, tokens: tokens.size }),
-    inset: surfaced.any({ attribute: 'inset', number: true, tokens: tokens.size }),
-    insetBlock: surfaced.any({ attribute: 'insetBlockStart', number: true, tokens: tokens.size }),
-    insetBlockStart: surfaced.any({ attribute: 'insetBlockStart', number: true, tokens: tokens.size }),
-    insetBlockEnd: surfaced.any({ attribute: 'insetBlockEnd', number: true, tokens: tokens.size }),
-    insetInline: surfaced.any({ attribute: 'insetInline', number: true, tokens: tokens.size }),
-    insetInlineStart: surfaced.any({ attribute: 'insetInlineStart', number: true, tokens: tokens.size }),
-    insetInlineEnd: surfaced.any({ attribute: 'insetInlineEnd', number: true, tokens: tokens.size }),
-
-    // Margin
-    margin: surfaced.any({ attribute: 'margin', number: true, tokens: tokens.size }),
-    marginBottom: surfaced.any({ attribute: 'marginBottom', number: true, tokens: tokens.size }),
-    marginLeft: surfaced.any({ attribute: 'marginLeft', number: true, tokens: tokens.size }),
-    marginRight: surfaced.any({ attribute: 'marginRight', number: true, tokens: tokens.size }),
-    marginTop: surfaced.any({ attribute: 'marginTop', number: true, tokens: tokens.size }),
-    marginHorizontal: surfaced.any({ attribute: 'marginHorizontal', number: true, tokens: tokens.size }),
-    marginVertical: surfaced.any({ attribute: 'marginVertical', number: true, tokens: tokens.size }),
-    m: surfaced.any({ attribute: 'margin', number: true, tokens: tokens.size }),
-    mx: surfaced.any({ attribute: 'marginHorizontal', number: true, tokens: tokens.size }),
-    my: surfaced.any({ attribute: 'marginVertical', number: true, tokens: tokens.size }),
-    mt: surfaced.any({ attribute: 'marginTop', number: true, tokens: tokens.size }),
-    mb: surfaced.any({ attribute: 'marginBottom', number: true, tokens: tokens.size }),
-    ml: surfaced.any({ attribute: 'marginLeft', number: true, tokens: tokens.size }),
-    mr: surfaced.any({ attribute: 'marginRight', number: true, tokens: tokens.size }),
-    marginBlock: surfaced.any({ attribute: 'marginBlock', number: true, tokens: tokens.size }),
-    marginBlockStart: surfaced.any({ attribute: 'marginBlockStart', number: true, tokens: tokens.size }),
-    marginBlockEnd: surfaced.any({ attribute: 'marginBlockEnd', number: true, tokens: tokens.size }),
-    marginInline: surfaced.any({ attribute: 'marginInline', number: true, tokens: tokens.size }),
-    marginInlineStart: surfaced.any({ attribute: 'marginInlineStart', number: true, tokens: tokens.size }),
-    marginInlineEnd: surfaced.any({ attribute: 'marginInlineEnd', number: true, tokens: tokens.size }),
-    marginStart: surfaced.any({ attribute: 'marginStart', number: true, tokens: tokens.size }),
-    marginEnd: surfaced.any({ attribute: 'marginEnd', number: true, tokens: tokens.size }),
-
-    // Layout
-    sizeX: surfaced.any({ attributes: ['width', 'maxWidth', 'minWidth'], number: true, percentage: true, tokens: tokens.size }),
-    sizeY: surfaced.any({ attributes: ['height', 'maxHeight', 'minHeight'], number: true, percentage: true, tokens: tokens.size }),
-    sizeXY: surfaced.any({ attributes: ['width', 'maxWidth', 'minWidth', 'height', 'maxHeight', 'minHeight'], number: true, percentage: true, tokens: tokens.size }),
-    width: surfaced.any({ attribute: 'width', number: true, percentage: true, tokens: tokens.size }),
-    height: surfaced.any({ attribute: 'height', number: true, percentage: true, tokens: tokens.size }),
-    minWidth: surfaced.any({ attribute: 'minWidth', number: true, percentage: true, tokens: tokens.size }),
-    minHeight: surfaced.any({ attribute: 'minHeight', number: true, percentage: true, tokens: tokens.size }),
-    maxWidth: surfaced.any({ attribute: 'maxWidth', number: true, percentage: true, tokens: tokens.size }),
-    maxHeight: surfaced.any({ attribute: 'maxHeight', number: true, percentage: true, tokens: tokens.size }),
-
-    // Transforms
-    rotate: surfaced.any({ custom: transform,  attribute: 'rotate', number: true, angle: true }),
-    rotateX: surfaced.any({ custom: transform,  attribute: 'rotateX', number: true, angle: true }),
-    rotateY: surfaced.any({ custom: transform,  attribute: 'rotateY', number: true, angle: true }),
-    rotateZ: surfaced.any({ custom: transform,  attribute: 'rotateZ', number: true, angle: true }),
-    x: surfaced.any({ custom: transform,  attribute: 'translateX', number: true, tokens: tokens.size }),
-    y: surfaced.any({ custom: transform,  attribute: 'translateY', number: true, tokens: tokens.size }),
-    translateX: surfaced.any({ custom: transform,  attribute: 'translateX', number: true, tokens: tokens.size }),
-    translateY: surfaced.any({ custom: transform,  attribute: 'translateY', number: true, tokens: tokens.size }),
-    scale: surfaced.any({ custom: transform,  attribute: 'scale', number: true, }),
-    scaleX: surfaced.any({ custom: transform,  attribute: 'scaleX', number: true, }),
-    scaleY: surfaced.any({ custom: transform,  attribute: 'scaleY', number: true, }),
-    skewX: surfaced.any({ custom: transform,  attribute: 'skewX', number: true, }),
-    skewY: surfaced.any({ custom: transform,  attribute: 'skewY', number: true, }),
-    perspective: surfaced.any({ attribute: 'perspective', number: true, }),
-    perspectiveOrigin: surfaced.any({ attribute: 'perspectiveOrigin', string: true }),
-    transformOrigin: surfaced.any({ attribute: 'transformOrigin', string: true }),
-
-    // Flex
-    flex: surfaced.any({ attribute: 'flex', number: true, }),
-    flexDirection: {
-      'row': { flexDirection: 'row' },
-      'column': { flexDirection: 'column' },
-      'row-reverse': { flexDirection: 'row-reverse' },
-      'column-reverse': { flexDirection: 'column-reverse' },
-    },
-    alignItems: {
-      'flex-start': { alignItems: 'flex-start' },
-      'flex-end': { alignItems: 'flex-end' },
-      'center': { alignItems: 'center' },
-      'stretch': { alignItems: 'stretch' },
-      'baseline': { alignItems: 'baseline' },
-    },
-
-    itemsStart: { true: ({ alignItems: 'flex-start' }) },
-    itemsEnd: { true: ({ alignItems: 'flex-end' }) },
-    itemsCenter: { true: ({ alignItems: 'center' }) },
-    itemsStretch: { true: ({ alignItems: 'stretch' }) },
-    itemsBaseline: { true: ({ alignItems: 'baseline' }) },
-
-    justifyContent: {
-      'flex-start': { justifyContent: 'flex-start' },
-      'flex-end': { justifyContent: 'flex-end' },
-      'center': { justifyContent: 'center' },
-      'space-between': { justifyContent: 'space-between' },
-      'space-around': { justifyContent: 'space-around' },
-      'space-evenly': { justifyContent: 'space-evenly' },
-    },
-
-    justifyStart: { true: { justifyContent: 'flex-start' } },
-    justifyEnd: { true: { justifyContent: 'flex-end' } },
-    justifyCenter: { true: { justifyContent: 'center' } },
-    justifyBetween: { true: { justifyContent: 'space-between' } },
-    justifyAround: { true: { justifyContent: 'space-around' } },
-    justifyEvenly: { true: { justifyContent: 'space-evenly' } },
-
-    alignContent: {
-      'flex-start': { alignContent: 'flex-start' },
-      'flex-end': { alignContent: 'flex-end' },
-      'center': { alignContent: 'center' },
-      'stretch': { alignContent: 'stretch' },
-      'space-between': { alignContent: 'space-between' },
-      'space-around': { alignContent: 'space-around' },
-      'space-evenly': { alignContent: 'space-evenly' },
-    },
-
-    contentStart: { true: { alignContent: 'flex-start' } },
-    contentEnd: { true: { alignContent: 'flex-end' } },
-    contentCenter: { true: { alignContent: 'center' } },
-    contentStretch: { true: { alignContent: 'stretch' } },
-    contentBetween: { true: { alignContent: 'space-between' } },
-    contentAround: { true: { alignContent: 'space-around' } },
-    contentEvenly: { true: { alignContent: 'space-evenly' } },
-
-    alignSelf: {
-      'auto': { alignSelf: 'auto' },
-      'flex-start': { alignSelf: 'flex-start' },
-      'flex-end': { alignSelf: 'flex-end' },
-      'center': { alignSelf: 'center' },
-      'stretch': { alignSelf: 'stretch' },
-      'baseline': { alignSelf: 'baseline' },
-    },
-
-    selfAuto: { true: { alignSelf: 'auto' } },
-    selfStart: { true: { alignSelf: 'flex-start' } },
-    selfEnd: { true: { alignSelf: 'flex-end' } },
-    selfCenter: { true: { alignSelf: 'center' } },
-    selfStretch: { true: { alignSelf: 'stretch' } },
-    selfBaseline: { true: { alignSelf: 'baseline' } },
-
-    flexWrap: {
-      true: { flexWrap: 'wrap' },
-      'wrap': { flexWrap: 'wrap' },
-      'nowrap': { flexWrap: 'nowrap' },
-      'wrap-reverse': { flexWrap: 'wrap-reverse' },
-    },
-
-    wrap: { true: { flexWrap: 'wrap' } },
-    nowrap: { true: { flexWrap: 'nowrap' } },
-    wrapReverse: { true: { flexWrap: 'wrap-reverse' } },
-
-    flexGrow: surfaced.any({ attribute: 'flexGrow', number: true, }),
-    flexShrink: surfaced.any({ attribute: 'flexShrink', number: true, }),
-    flexBasis: surfaced.any({ attribute: 'flexBasis', number: true, }),
-
-    gap: surfaced.any({ attribute: 'gap', number: true, percentage: true, tokens: tokens.size }),
-
-    // Grid Item
-    row: surfaced.any({ attribute: 'row', number: true, string: true }),
-    column: surfaced.any({ attribute: 'column', number: true, string: true }),
-    rowSpan: surfaced.any({ attribute: 'rowSpan', number: true, string: true }),
-    columnSpan: surfaced.any({ attribute: 'columnSpan', number: true, string: true }),
-    rowStart: surfaced.any({ attribute: 'rowStart', number: true, string: true }),
-    columnStart: surfaced.any({ attribute: 'columnStart', number: true, string: true }),
-    rowEnd: surfaced.any({ attribute: 'rowEnd', number: true, string: true }),
-    columnEnd: surfaced.any({ attribute: 'columnEnd', number: true, string: true }),
-    area: surfaced.any({ attribute: 'area', string: true }),
-    order: surfaced.any({ attribute: 'order', number: true, string: true  }),
-
-    // Background
-    backgroundAttachment: surfaced.any({ attribute: 'backgroundAttachment', string: true }),
-    backgroundBlendMode: surfaced.any({ attribute: 'backgroundBlendMode', string: true }),
-    backgroundClip: surfaced.any({ attribute: 'backgroundClip', string: true }),
-    backgroundColor: surfaced.any({ attribute: 'backgroundColor', color: true, tokens: tokens.colors }),
-    bg: surfaced.any({ attribute: 'backgroundColor', color: true, tokens: tokens.colors }),
-    backgroundOrigin: surfaced.any({ attribute: 'backgroundOrigin', string: true }),
-    backgroundPosition: surfaced.any({ attribute: 'backgroundPosition', string: true }),
-    backgroundSize: surfaced.any({ attribute: 'backgroundSize', string: true }),
-    backgroundImage: surfaced.any({ attribute: 'backgroundImage', string: true }),
-    // backgroundRepeat: {
-    //   'repeat': { backgroundRepeat: 'repeat' as const },
-    //   'repeat-x': { backgroundRepeat: 'repeat-x' },
-    //   'repeat-y': { backgroundRepeat: 'repeat-y' },
-    //   'no-repeat': { backgroundRepeat: 'no-repeat' },
-    //   'space': { backgroundRepeat: 'space' },
-    // },
-
-
-    // Border
-    borderRadius: surfaced.any({ attribute: 'borderRadius', number: true, tokens: tokens.size }),
-    borderTopLeftRadius: surfaced.any({ attribute: 'borderTopLeftRadius', number: true, tokens: tokens.size }),
-    borderTopRightRadius: surfaced.any({ attribute: 'borderTopRightRadius', number: true, tokens: tokens.size }),
-    borderBottomLeftRadius: surfaced.any({ attribute: 'borderBottomLeftRadius', number: true, tokens: tokens.size }),
-    borderBottomRightRadius: surfaced.any({ attribute: 'borderBottomRightRadius', number: true, tokens: tokens.size }),
-    borderStartStartRadius: surfaced.any({ attribute: 'borderStartStartRadius', number: true, tokens: tokens.size }),
-    borderStartEndRadius: surfaced.any({ attribute: 'borderStartEndRadius', number: true, tokens: tokens.size }),
-    borderEndStartRadius: surfaced.any({ attribute: 'borderEndStartRadius', number: true, tokens: tokens.size }),
-    borderEndEndRadius: surfaced.any({ attribute: 'borderEndEndRadius', number: true, tokens: tokens.size }),
-    borderTopStartRadius: surfaced.any({ attribute: 'borderTopStartRadius', number: true, tokens: tokens.size }),
-    borderTopEndRadius: surfaced.any({ attribute: 'borderTopEndRadius', number: true, tokens: tokens.size }),
-    borderBottomStartRadius: surfaced.any({ attribute: 'borderBottomStartRadius', number: true, tokens: tokens.size }),
-    borderBottomEndRadius: surfaced.any({ attribute: 'borderBottomEndRadius', number: true, tokens: tokens.size }),
-    borderColor: surfaced.any({ attribute: 'borderColor', color: true, tokens: tokens.colors }),
-    borderTopColor: surfaced.any({ attribute: 'borderTopColor', color: true, tokens: tokens.colors }),
-    borderRightColor: surfaced.any({ attribute: 'borderRightColor', color: true, tokens: tokens.colors }),
-    borderBottomColor: surfaced.any({ attribute: 'borderBottomColor', color: true, tokens: tokens.colors }),
-    borderLeftColor: surfaced.any({ attribute: 'borderLeftColor', color: true, tokens: tokens.colors }),
-    borderStartColor: surfaced.any({ attribute: 'borderStartColor', color: true, tokens: tokens.colors }),
-    borderEndColor: surfaced.any({ attribute: 'borderEndColor', color: true, tokens: tokens.colors }),
-    borderBlockColor: surfaced.any({ attribute: 'borderBlockColor', color: true, tokens: tokens.colors }),
-    borderBlockStartColor: surfaced.any({ attribute: 'borderBlockStartColor', color: true, tokens: tokens.colors }),
-    borderBlockEndColor: surfaced.any({ attribute: 'borderBlockEndColor', color: true, tokens: tokens.colors }),
-    borderWidth: surfaced.any({ attribute: 'borderWidth', number: true, tokens: tokens.size }),
-    borderTopWidth: surfaced.any({ attribute: 'borderTopWidth', number: true, tokens: tokens.size }),
-    borderRightWidth: surfaced.any({ attribute: 'borderRightWidth', number: true, tokens: tokens.size }),
-    borderBottomWidth: surfaced.any({ attribute: 'borderBottomWidth', number: true, tokens: tokens.size }),
-    borderLeftWidth: surfaced.any({ attribute: 'borderLeftWidth', number: true, tokens: tokens.size }),
-    borderStartWidth: surfaced.any({ attribute: 'borderStartWidth', number: true, tokens: tokens.size }),
-    borderEndWidth: surfaced.any({ attribute: 'borderEndWidth', number: true, tokens: tokens.size }),
-    borderBlockWidth: surfaced.any({ attribute: 'borderBlockWidth', number: true, tokens: tokens.size }),
-    borderBlockStartWidth: surfaced.any({ attribute: 'borderBlockStartWidth', number: true, tokens: tokens.size }),
-    borderBlockEndWidth: surfaced.any({ attribute: 'borderBlockEndWidth', number: true, tokens: tokens.size }),
-
-    borderCurve: {
-      circular: { borderCurve: 'circular' },
-      continuous: { borderCurve: 'continuous' },
-    },
-
-    borderStyle: {
-      solid: { borderStyle: 'solid' },
-      dashed: { borderStyle: 'dashed' },
-      dotted: { borderStyle: 'dotted' },
-    },
-
-    outline: surfaced.any({ attribute: 'outline', string: true }),
-    outlineColor: surfaced.any({ attribute: 'outlineColor', color: true, tokens: tokens.colors }),
-    outlineWidth: surfaced.any({ attribute: 'outlineWidth', number: true, tokens: tokens.size }),
-    outlineOffset: surfaced.any({ attribute: 'outlineOffset', number: true, tokens: tokens.size }),
-    outlineStyle: {
-      'solid': { outlineStyle: 'solid' },
-      'dashed': { outlineStyle: 'dashed' },
-      'dotted': { outlineStyle: 'dotted' },
-    },
-
-    // Misc
-    aspectRatio: surfaced.any({ attribute: 'aspectRatio', number: true, }),
-    opacity: surfaced.any({ attribute: 'opacity', number: true, }),
-
-    boxSizing: ContentSizing,
-    borderBox: { true: ContentSizing.borderBox },
-    contentBox: { true: ContentSizing.contentBox },
-    cursor: Cursor,
-
-    overflow: {
-      'visible': { overflow: 'visible' },
-      'hidden': { overflow: 'hidden' },
-      'scroll': { overflow: 'scroll' },
-    },
-
-    overflowVisible: { true: { overflow: 'visible' } },
-    overflowHidden: { true: { overflow: 'hidden' } },
-    overflowScroll: { true: { overflow: 'scroll' } },
-
-    overflowX: {
+export const createViewBase = <C extends Surfaced>(surfaced: C) =>
+  surfaced(View).with(({ theme, attrs }) => ({
+    variants: {
       // @ts-expect-error
-      'visible': { overflowX: 'visible' },
+      position: Position,
+      zIndex: attrs.any({ attribute: "zIndex", number: true }),
+      z: attrs.any({ attribute: "zIndex", number: true }),
+      absoluteFill: {
+        true: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0 },
+      },
+      absolute: { true: Position.absolute },
       // @ts-expect-error
-      'hidden': { overflowX: 'hidden' },
+      fixed: { true: Position.fixed },
       // @ts-expect-error
-      'scroll': { overflowX: 'scroll' },
+      sticky: { true: Position.sticky },
+      relative: { true: Position.relative },
+      static: { true: Position.static },
+      top: attrs.any({ attribute: "top", number: true, tokens: theme.size }),
+      bottom: attrs.any({
+        attribute: "bottom",
+        number: true,
+        tokens: theme.size,
+      }),
+      left: attrs.any({ attribute: "left", number: true, tokens: theme.size }),
+      right: attrs.any({
+        attribute: "right",
+        number: true,
+        tokens: theme.size,
+      }),
+      start: attrs.any({
+        attribute: "start",
+        number: true,
+        tokens: theme.size,
+      }),
+      end: attrs.any({ attribute: "end", number: true, tokens: theme.size }),
+
+      // Padding
+      padding: attrs.any({
+        attribute: "padding",
+        number: true,
+        tokens: theme.size,
+      }),
+      paddingHorizontal: attrs.any({
+        attribute: "paddingHorizontal",
+        number: true,
+        tokens: theme.size,
+      }),
+      paddingVertical: attrs.any({
+        attribute: "paddingVertical",
+        number: true,
+        tokens: theme.size,
+      }),
+      paddingTop: attrs.any({
+        attribute: "paddingTop",
+        number: true,
+        tokens: theme.size,
+      }),
+      paddingBottom: attrs.any({
+        attribute: "paddingBottom",
+        number: true,
+        tokens: theme.size,
+      }),
+      paddingLeft: attrs.any({
+        attribute: "paddingLeft",
+        number: true,
+        tokens: theme.size,
+      }),
+      paddingRight: attrs.any({
+        attribute: "paddingRight",
+        number: true,
+        tokens: theme.size,
+      }),
+      p: attrs.any({ attribute: "padding", number: true, tokens: theme.size }),
+      px: attrs.any({
+        attribute: "paddingHorizontal",
+        number: true,
+        tokens: theme.size,
+      }),
+      py: attrs.any({
+        attribute: "paddingVertical",
+        number: true,
+        tokens: theme.size,
+      }),
+      pt: attrs.any({
+        attribute: "paddingTop",
+        number: true,
+        tokens: theme.size,
+      }),
+      pb: attrs.any({
+        attribute: "paddingBottom",
+        number: true,
+        tokens: theme.size,
+      }),
+      pl: attrs.any({
+        attribute: "paddingLeft",
+        number: true,
+        tokens: theme.size,
+      }),
+      pr: attrs.any({
+        attribute: "paddingRight",
+        number: true,
+        tokens: theme.size,
+      }),
+      paddingBlock: attrs.any({
+        attribute: "paddingBlockStart",
+        number: true,
+        tokens: theme.size,
+      }),
+      paddingBlockStart: attrs.any({
+        attribute: "paddingBlockStart",
+        number: true,
+        tokens: theme.size,
+      }),
+      paddingBlockEnd: attrs.any({
+        attribute: "paddingBlockEnd",
+        number: true,
+        tokens: theme.size,
+      }),
+      paddingInline: attrs.any({
+        attribute: "paddingInline",
+        number: true,
+        tokens: theme.size,
+      }),
+      paddingInlineStart: attrs.any({
+        attribute: "paddingInlineStart",
+        number: true,
+        tokens: theme.size,
+      }),
+      paddingInlineEnd: attrs.any({
+        attribute: "paddingInlineEnd",
+        number: true,
+        tokens: theme.size,
+      }),
+      paddingStart: attrs.any({
+        attribute: "paddingStart",
+        number: true,
+        tokens: theme.size,
+      }),
+      paddingEnd: attrs.any({
+        attribute: "paddingEnd",
+        number: true,
+        tokens: theme.size,
+      }),
+      inset: attrs.any({
+        attribute: "inset",
+        number: true,
+        tokens: theme.size,
+      }),
+      insetBlock: attrs.any({
+        attribute: "insetBlockStart",
+        number: true,
+        tokens: theme.size,
+      }),
+      insetBlockStart: attrs.any({
+        attribute: "insetBlockStart",
+        number: true,
+        tokens: theme.size,
+      }),
+      insetBlockEnd: attrs.any({
+        attribute: "insetBlockEnd",
+        number: true,
+        tokens: theme.size,
+      }),
+      insetInline: attrs.any({
+        attribute: "insetInline",
+        number: true,
+        tokens: theme.size,
+      }),
+      insetInlineStart: attrs.any({
+        attribute: "insetInlineStart",
+        number: true,
+        tokens: theme.size,
+      }),
+      insetInlineEnd: attrs.any({
+        attribute: "insetInlineEnd",
+        number: true,
+        tokens: theme.size,
+      }),
+
+      // Margin
+      margin: attrs.any({
+        attribute: "margin",
+        number: true,
+        tokens: theme.size,
+      }),
+      marginBottom: attrs.any({
+        attribute: "marginBottom",
+        number: true,
+        tokens: theme.size,
+      }),
+      marginLeft: attrs.any({
+        attribute: "marginLeft",
+        number: true,
+        tokens: theme.size,
+      }),
+      marginRight: attrs.any({
+        attribute: "marginRight",
+        number: true,
+        tokens: theme.size,
+      }),
+      marginTop: attrs.any({
+        attribute: "marginTop",
+        number: true,
+        tokens: theme.size,
+      }),
+      marginHorizontal: attrs.any({
+        attribute: "marginHorizontal",
+        number: true,
+        tokens: theme.size,
+      }),
+      marginVertical: attrs.any({
+        attribute: "marginVertical",
+        number: true,
+        tokens: theme.size,
+      }),
+      m: attrs.any({ attribute: "margin", number: true, tokens: theme.size }),
+      mx: attrs.any({
+        attribute: "marginHorizontal",
+        number: true,
+        tokens: theme.size,
+      }),
+      my: attrs.any({
+        attribute: "marginVertical",
+        number: true,
+        tokens: theme.size,
+      }),
+      mt: attrs.any({
+        attribute: "marginTop",
+        number: true,
+        tokens: theme.size,
+      }),
+      mb: attrs.any({
+        attribute: "marginBottom",
+        number: true,
+        tokens: theme.size,
+      }),
+      ml: attrs.any({
+        attribute: "marginLeft",
+        number: true,
+        tokens: theme.size,
+      }),
+      mr: attrs.any({
+        attribute: "marginRight",
+        number: true,
+        tokens: theme.size,
+      }),
+      marginBlock: attrs.any({
+        attribute: "marginBlock",
+        number: true,
+        tokens: theme.size,
+      }),
+      marginBlockStart: attrs.any({
+        attribute: "marginBlockStart",
+        number: true,
+        tokens: theme.size,
+      }),
+      marginBlockEnd: attrs.any({
+        attribute: "marginBlockEnd",
+        number: true,
+        tokens: theme.size,
+      }),
+      marginInline: attrs.any({
+        attribute: "marginInline",
+        number: true,
+        tokens: theme.size,
+      }),
+      marginInlineStart: attrs.any({
+        attribute: "marginInlineStart",
+        number: true,
+        tokens: theme.size,
+      }),
+      marginInlineEnd: attrs.any({
+        attribute: "marginInlineEnd",
+        number: true,
+        tokens: theme.size,
+      }),
+      marginStart: attrs.any({
+        attribute: "marginStart",
+        number: true,
+        tokens: theme.size,
+      }),
+      marginEnd: attrs.any({
+        attribute: "marginEnd",
+        number: true,
+        tokens: theme.size,
+      }),
+
+      // Layout
+      sizeX: attrs.any({
+        attributes: ["width", "maxWidth", "minWidth"],
+        number: true,
+        percentage: true,
+        tokens: theme.size,
+      }),
+      sizeY: attrs.any({
+        attributes: ["height", "maxHeight", "minHeight"],
+        number: true,
+        percentage: true,
+        tokens: theme.size,
+      }),
+      sizeXY: attrs.any({
+        attributes: [
+          "width",
+          "maxWidth",
+          "minWidth",
+          "height",
+          "maxHeight",
+          "minHeight",
+        ],
+        number: true,
+        percentage: true,
+        tokens: theme.size,
+      }),
+      width: attrs.any({
+        attribute: "width",
+        number: true,
+        percentage: true,
+        tokens: theme.size,
+      }),
+      height: attrs.any({
+        attribute: "height",
+        number: true,
+        percentage: true,
+        tokens: theme.size,
+      }),
+      minWidth: attrs.any({
+        attribute: "minWidth",
+        number: true,
+        percentage: true,
+        tokens: theme.size,
+      }),
+      minHeight: attrs.any({
+        attribute: "minHeight",
+        number: true,
+        percentage: true,
+        tokens: theme.size,
+      }),
+      maxWidth: attrs.any({
+        attribute: "maxWidth",
+        number: true,
+        percentage: true,
+        tokens: theme.size,
+      }),
+      maxHeight: attrs.any({
+        attribute: "maxHeight",
+        number: true,
+        percentage: true,
+        tokens: theme.size,
+      }),
+
+      // Transforms
+      rotate: attrs.any({
+        custom: transform,
+        attribute: "rotate",
+        number: true,
+        angle: true,
+      }),
+      rotateX: attrs.any({
+        custom: transform,
+        attribute: "rotateX",
+        number: true,
+        angle: true,
+      }),
+      rotateY: attrs.any({
+        custom: transform,
+        attribute: "rotateY",
+        number: true,
+        angle: true,
+      }),
+      rotateZ: attrs.any({
+        custom: transform,
+        attribute: "rotateZ",
+        number: true,
+        angle: true,
+      }),
+      x: attrs.any({
+        custom: transform,
+        attribute: "translateX",
+        number: true,
+        tokens: theme.size,
+      }),
+      y: attrs.any({
+        custom: transform,
+        attribute: "translateY",
+        number: true,
+        tokens: theme.size,
+      }),
+      translateX: attrs.any({
+        custom: transform,
+        attribute: "translateX",
+        number: true,
+        tokens: theme.size,
+      }),
+      translateY: attrs.any({
+        custom: transform,
+        attribute: "translateY",
+        number: true,
+        tokens: theme.size,
+      }),
+      scale: attrs.any({ custom: transform, attribute: "scale", number: true }),
+      scaleX: attrs.any({
+        custom: transform,
+        attribute: "scaleX",
+        number: true,
+      }),
+      scaleY: attrs.any({
+        custom: transform,
+        attribute: "scaleY",
+        number: true,
+      }),
+      skewX: attrs.any({ custom: transform, attribute: "skewX", number: true }),
+      skewY: attrs.any({ custom: transform, attribute: "skewY", number: true }),
+      perspective: attrs.any({ attribute: "perspective", number: true }),
+      perspectiveOrigin: attrs.any({
+        attribute: "perspectiveOrigin",
+        string: true,
+      }),
+      transformOrigin: attrs.any({
+        attribute: "transformOrigin",
+        string: true,
+      }),
+
+      // Flex
+      flex: attrs.any({ attribute: "flex", number: true }),
+      flexDirection: {
+        row: { flexDirection: "row" },
+        column: { flexDirection: "column" },
+        "row-reverse": { flexDirection: "row-reverse" },
+        "column-reverse": { flexDirection: "column-reverse" },
+      },
+      alignItems: {
+        "flex-start": { alignItems: "flex-start" },
+        "flex-end": { alignItems: "flex-end" },
+        center: { alignItems: "center" },
+        stretch: { alignItems: "stretch" },
+        baseline: { alignItems: "baseline" },
+      },
+
+      itemsStart: { true: { alignItems: "flex-start" } },
+      itemsEnd: { true: { alignItems: "flex-end" } },
+      itemsCenter: { true: { alignItems: "center" } },
+      itemsStretch: { true: { alignItems: "stretch" } },
+      itemsBaseline: { true: { alignItems: "baseline" } },
+
+      justifyContent: {
+        "flex-start": { justifyContent: "flex-start" },
+        "flex-end": { justifyContent: "flex-end" },
+        center: { justifyContent: "center" },
+        "space-between": { justifyContent: "space-between" },
+        "space-around": { justifyContent: "space-around" },
+        "space-evenly": { justifyContent: "space-evenly" },
+      },
+
+      justifyStart: { true: { justifyContent: "flex-start" } },
+      justifyEnd: { true: { justifyContent: "flex-end" } },
+      justifyCenter: { true: { justifyContent: "center" } },
+      justifyBetween: { true: { justifyContent: "space-between" } },
+      justifyAround: { true: { justifyContent: "space-around" } },
+      justifyEvenly: { true: { justifyContent: "space-evenly" } },
+
+      alignContent: {
+        "flex-start": { alignContent: "flex-start" },
+        "flex-end": { alignContent: "flex-end" },
+        center: { alignContent: "center" },
+        stretch: { alignContent: "stretch" },
+        "space-between": { alignContent: "space-between" },
+        "space-around": { alignContent: "space-around" },
+        "space-evenly": { alignContent: "space-evenly" },
+      },
+
+      contentStart: { true: { alignContent: "flex-start" } },
+      contentEnd: { true: { alignContent: "flex-end" } },
+      contentCenter: { true: { alignContent: "center" } },
+      contentStretch: { true: { alignContent: "stretch" } },
+      contentBetween: { true: { alignContent: "space-between" } },
+      contentAround: { true: { alignContent: "space-around" } },
+      contentEvenly: { true: { alignContent: "space-evenly" } },
+
+      alignSelf: {
+        auto: { alignSelf: "auto" },
+        "flex-start": { alignSelf: "flex-start" },
+        "flex-end": { alignSelf: "flex-end" },
+        center: { alignSelf: "center" },
+        stretch: { alignSelf: "stretch" },
+        baseline: { alignSelf: "baseline" },
+      },
+
+      selfAuto: { true: { alignSelf: "auto" } },
+      selfStart: { true: { alignSelf: "flex-start" } },
+      selfEnd: { true: { alignSelf: "flex-end" } },
+      selfCenter: { true: { alignSelf: "center" } },
+      selfStretch: { true: { alignSelf: "stretch" } },
+      selfBaseline: { true: { alignSelf: "baseline" } },
+
+      flexWrap: {
+        true: { flexWrap: "wrap" },
+        wrap: { flexWrap: "wrap" },
+        nowrap: { flexWrap: "nowrap" },
+        "wrap-reverse": { flexWrap: "wrap-reverse" },
+      },
+
+      wrap: { true: { flexWrap: "wrap" } },
+      nowrap: { true: { flexWrap: "nowrap" } },
+      wrapReverse: { true: { flexWrap: "wrap-reverse" } },
+
+      flexGrow: attrs.any({ attribute: "flexGrow", number: true }),
+      flexShrink: attrs.any({ attribute: "flexShrink", number: true }),
+      flexBasis: attrs.any({ attribute: "flexBasis", number: true }),
+
+      gap: attrs.any({
+        attribute: "gap",
+        number: true,
+        percentage: true,
+        tokens: theme.size,
+      }),
+
+      // Grid Item
+      row: attrs.any({ attribute: "row", number: true, string: true }),
+      column: attrs.any({ attribute: "column", number: true, string: true }),
+      rowSpan: attrs.any({ attribute: "rowSpan", number: true, string: true }),
+      columnSpan: attrs.any({
+        attribute: "columnSpan",
+        number: true,
+        string: true,
+      }),
+      rowStart: attrs.any({
+        attribute: "rowStart",
+        number: true,
+        string: true,
+      }),
+      columnStart: attrs.any({
+        attribute: "columnStart",
+        number: true,
+        string: true,
+      }),
+      rowEnd: attrs.any({ attribute: "rowEnd", number: true, string: true }),
+      columnEnd: attrs.any({
+        attribute: "columnEnd",
+        number: true,
+        string: true,
+      }),
+      area: attrs.any({ attribute: "area", string: true }),
+      order: attrs.any({ attribute: "order", number: true, string: true }),
+
+      // Background
+      backgroundAttachment: attrs.any({
+        attribute: "backgroundAttachment",
+        string: true,
+      }),
+      backgroundBlendMode: attrs.any({
+        attribute: "backgroundBlendMode",
+        string: true,
+      }),
+      backgroundClip: attrs.any({ attribute: "backgroundClip", string: true }),
+      backgroundColor: attrs.any({
+        attribute: "backgroundColor",
+        color: true,
+        tokens: theme.colors,
+      }),
+      bg: attrs.any({
+        attribute: "backgroundColor",
+        color: true,
+        tokens: theme.colors,
+      }),
+      backgroundOrigin: attrs.any({
+        attribute: "backgroundOrigin",
+        string: true,
+      }),
+      backgroundPosition: attrs.any({
+        attribute: "backgroundPosition",
+        string: true,
+      }),
+      backgroundSize: attrs.any({ attribute: "backgroundSize", string: true }),
+      backgroundImage: attrs.any({
+        attribute: "backgroundImage",
+        string: true,
+      }),
+      backgroundRepeat: {
+        // @ts-expect-error
+        repeat: { backgroundRepeat: "repeat" as const },
+        // @ts-expect-error
+        "repeat-x": { backgroundRepeat: "repeat-x" },
+        // @ts-expect-error
+        "repeat-y": { backgroundRepeat: "repeat-y" },
+        // @ts-expect-error
+        "no-repeat": { backgroundRepeat: "no-repeat" },
+        // @ts-expect-error
+        space: { backgroundRepeat: "space" },
+      },
+
+      // Border
+      borderRadius: attrs.any({
+        attribute: "borderRadius",
+        number: true,
+        tokens: theme.size,
+      }),
+      borderTopLeftRadius: attrs.any({
+        attribute: "borderTopLeftRadius",
+        number: true,
+        tokens: theme.size,
+      }),
+      borderTopRightRadius: attrs.any({
+        attribute: "borderTopRightRadius",
+        number: true,
+        tokens: theme.size,
+      }),
+      borderBottomLeftRadius: attrs.any({
+        attribute: "borderBottomLeftRadius",
+        number: true,
+        tokens: theme.size,
+      }),
+      borderBottomRightRadius: attrs.any({
+        attribute: "borderBottomRightRadius",
+        number: true,
+        tokens: theme.size,
+      }),
+      borderStartStartRadius: attrs.any({
+        attribute: "borderStartStartRadius",
+        number: true,
+        tokens: theme.size,
+      }),
+      borderStartEndRadius: attrs.any({
+        attribute: "borderStartEndRadius",
+        number: true,
+        tokens: theme.size,
+      }),
+      borderEndStartRadius: attrs.any({
+        attribute: "borderEndStartRadius",
+        number: true,
+        tokens: theme.size,
+      }),
+      borderEndEndRadius: attrs.any({
+        attribute: "borderEndEndRadius",
+        number: true,
+        tokens: theme.size,
+      }),
+      borderTopStartRadius: attrs.any({
+        attribute: "borderTopStartRadius",
+        number: true,
+        tokens: theme.size,
+      }),
+      borderTopEndRadius: attrs.any({
+        attribute: "borderTopEndRadius",
+        number: true,
+        tokens: theme.size,
+      }),
+      borderBottomStartRadius: attrs.any({
+        attribute: "borderBottomStartRadius",
+        number: true,
+        tokens: theme.size,
+      }),
+      borderBottomEndRadius: attrs.any({
+        attribute: "borderBottomEndRadius",
+        number: true,
+        tokens: theme.size,
+      }),
+      borderColor: attrs.any({
+        attribute: "borderColor",
+        color: true,
+        tokens: theme.colors,
+      }),
+      borderTopColor: attrs.any({
+        attribute: "borderTopColor",
+        color: true,
+        tokens: theme.colors,
+      }),
+      borderRightColor: attrs.any({
+        attribute: "borderRightColor",
+        color: true,
+        tokens: theme.colors,
+      }),
+      borderBottomColor: attrs.any({
+        attribute: "borderBottomColor",
+        color: true,
+        tokens: theme.colors,
+      }),
+      borderLeftColor: attrs.any({
+        attribute: "borderLeftColor",
+        color: true,
+        tokens: theme.colors,
+      }),
+      borderStartColor: attrs.any({
+        attribute: "borderStartColor",
+        color: true,
+        tokens: theme.colors,
+      }),
+      borderEndColor: attrs.any({
+        attribute: "borderEndColor",
+        color: true,
+        tokens: theme.colors,
+      }),
+      borderBlockColor: attrs.any({
+        attribute: "borderBlockColor",
+        color: true,
+        tokens: theme.colors,
+      }),
+      borderBlockStartColor: attrs.any({
+        attribute: "borderBlockStartColor",
+        color: true,
+        tokens: theme.colors,
+      }),
+      borderBlockEndColor: attrs.any({
+        attribute: "borderBlockEndColor",
+        color: true,
+        tokens: theme.colors,
+      }),
+      borderWidth: attrs.any({
+        attribute: "borderWidth",
+        number: true,
+        tokens: theme.size,
+      }),
+      borderTopWidth: attrs.any({
+        attribute: "borderTopWidth",
+        number: true,
+        tokens: theme.size,
+      }),
+      borderRightWidth: attrs.any({
+        attribute: "borderRightWidth",
+        number: true,
+        tokens: theme.size,
+      }),
+      borderBottomWidth: attrs.any({
+        attribute: "borderBottomWidth",
+        number: true,
+        tokens: theme.size,
+      }),
+      borderLeftWidth: attrs.any({
+        attribute: "borderLeftWidth",
+        number: true,
+        tokens: theme.size,
+      }),
+      borderStartWidth: attrs.any({
+        attribute: "borderStartWidth",
+        number: true,
+        tokens: theme.size,
+      }),
+      borderEndWidth: attrs.any({
+        attribute: "borderEndWidth",
+        number: true,
+        tokens: theme.size,
+      }),
+      borderBlockWidth: attrs.any({
+        attribute: "borderBlockWidth",
+        number: true,
+        tokens: theme.size,
+      }),
+      borderBlockStartWidth: attrs.any({
+        attribute: "borderBlockStartWidth",
+        number: true,
+        tokens: theme.size,
+      }),
+      borderBlockEndWidth: attrs.any({
+        attribute: "borderBlockEndWidth",
+        number: true,
+        tokens: theme.size,
+      }),
+
+      borderCurve: {
+        circular: { borderCurve: "circular" },
+        continuous: { borderCurve: "continuous" },
+      },
+
+      borderStyle: {
+        solid: { borderStyle: "solid" },
+        dashed: { borderStyle: "dashed" },
+        dotted: { borderStyle: "dotted" },
+      },
+
+      outline: attrs.any({ attribute: "outline", string: true }),
+      outlineColor: attrs.any({
+        attribute: "outlineColor",
+        color: true,
+        tokens: theme.colors,
+      }),
+      outlineWidth: attrs.any({
+        attribute: "outlineWidth",
+        number: true,
+        tokens: theme.size,
+      }),
+      outlineOffset: attrs.any({
+        attribute: "outlineOffset",
+        number: true,
+        tokens: theme.size,
+      }),
+      outlineStyle: {
+        solid: { outlineStyle: "solid" },
+        dashed: { outlineStyle: "dashed" },
+        dotted: { outlineStyle: "dotted" },
+      },
+
+      // Misc
+      aspectRatio: attrs.any({ attribute: "aspectRatio", number: true }),
+      opacity: attrs.any({ attribute: "opacity", number: true }),
+
+      boxSizing: ContentSizing,
+      borderBox: { true: ContentSizing.borderBox },
+      contentBox: { true: ContentSizing.contentBox },
+      cursor: Cursor,
+
+      overflow: {
+        visible: { overflow: "visible" },
+        hidden: { overflow: "hidden" },
+        scroll: { overflow: "scroll" },
+      },
+
+      overflowVisible: { true: { overflow: "visible" } },
+      overflowHidden: { true: { overflow: "hidden" } },
+      overflowScroll: { true: { overflow: "scroll" } },
+
+      overflowX: {
+        // @ts-expect-error
+        visible: { overflowX: "visible" },
+        // @ts-expect-error
+        hidden: { overflowX: "hidden" },
+        // @ts-expect-error
+        scroll: { overflowX: "scroll" },
+      },
+
+      // @ts-expect-error
+      overflowXVisible: { true: { overflowX: "visible" } },
+      // @ts-expect-error
+      overflowXHidden: { true: { overflowX: "hidden" } },
+      // @ts-expect-error
+      overflowXScroll: { true: { overflowX: "scroll" } },
+
+      overflowY: {
+        // @ts-expect-error
+        visible: { overflowY: "visible" },
+        // @ts-expect-error
+        hidden: { overflowY: "hidden" },
+        // @ts-expect-error
+        scroll: { overflowY: "scroll" },
+      },
+
+      // @ts-expect-error
+      overflowYVisible: { true: { overflowY: "visible" } },
+      // @ts-expect-error
+      overflowYHidden: { true: { overflowY: "hidden" } },
+      // @ts-expect-error
+      overflowYScroll: { true: { overflowY: "scroll" } },
+
+      display: {
+        none: { display: "none" },
+        flex: { display: "flex" },
+      },
+
+      visibility: {
+        // @ts-expect-error
+        visible: { visibility: "visible" },
+        // @ts-expect-error
+        hidden: { visibility: "hidden" },
+        // @ts-expect-error
+        collapse: { visibility: "collapse" },
+      },
+
+      // @ts-expect-error
+      visibilityVisible: { true: { visibility: "visible" } },
+      // @ts-expect-error
+      visibilityHidden: { true: { visibility: "hidden" } },
+      // @ts-expect-error
+      visibilityCollapse: { true: { visibility: "collapse" } },
+
+      backdropFilter: attrs.any({ attribute: "backdropFilter", string: true }),
+
+      backfaceVisibility: {
+        hidden: { backfaceVisibility: "hidden" },
+        visible: { backfaceVisibility: "visible" },
+      },
+
+      elevation: attrs.any({ attribute: "elevation", number: true }),
+      boxShadow: attrs.any({ attribute: "boxShadow", string: true }),
+
+      overscrollBehavior: {
+        // @ts-expect-error
+        auto: { overscrollBehavior: "auto" },
+        // @ts-expect-error
+        contain: { overscrollBehavior: "contain" },
+        // @ts-expect-error
+        none: { overscrollBehavior: "none" },
+      },
+
+      userSelect: {
+        // @ts-expect-error
+        none: { userSelect: "none" },
+        // @ts-expect-error
+        text: { userSelect: "text" },
+        // @ts-expect-error
+        all: { userSelect: "all" },
+        // @ts-expect-error
+        auto: { userSelect: "auto" },
+      },
+
+      willChange: attrs.any({ attribute: "willChange", string: true }),
+      pointerEvents: {
+        auto: { pointerEvents: "auto" },
+        none: { pointerEvents: "none" },
+        "box-none": { pointerEvents: "box-none" },
+        "box-only": { pointerEvents: "box-only" },
+      },
+
+      direction: {
+        ltr: { direction: "ltr" },
+        rtl: { direction: "rtl" },
+        inherit: { direction: "inherit" },
+      },
+
+      mixBlendMode: {
+        normal: { mixBlendMode: "normal" },
+        multiply: { mixBlendMode: "multiply" },
+        screen: { mixBlendMode: "screen" },
+        overlay: { mixBlendMode: "overlay" },
+        darken: { mixBlendMode: "darken" },
+        lighten: { mixBlendMode: "lighten" },
+        "color-dodge": { mixBlendMode: "color" },
+        "color-burn": { mixBlendMode: "color" },
+        "hard-light": { mixBlendMode: "hard-light" },
+        "soft-light": { mixBlendMode: "soft-light" },
+        difference: { mixBlendMode: "difference" },
+        exclusion: { mixBlendMode: "exclusion" },
+        hue: { mixBlendMode: "hue" },
+        saturation: { mixBlendMode: "saturation" },
+        color: { mixBlendMode: "color" },
+        luminosity: { mixBlendMode: "luminosity" },
+      },
+
+      clip: attrs.any({ attribute: "clip", string: true }),
+      filter: attrs.any({ attribute: "filter", string: true }),
+      isolation: {
+        auto: { isolation: "auto" },
+        isolate: { isolation: "isolate" },
+      },
+      overscrollBehaviorX: {
+        // @ts-expect-error
+        auto: { overscrollBehaviorX: "auto" },
+        // @ts-expect-error
+        contain: { overscrollBehaviorX: "contain" },
+        // @ts-expect-error
+        none: { overscrollBehaviorX: "none" },
+      },
+      overscrollBehaviorY: {
+        // @ts-expect-error
+        auto: { overscrollBehaviorY: "auto" },
+        // @ts-expect-error
+        contain: { overscrollBehaviorY: "contain" },
+        // @ts-expect-error
+        none: { overscrollBehaviorY: "none" },
+      },
+      rotation: attrs.any({ attribute: "rotation", string: true }),
+
+      // Animations & Transition
+      transitionProperty: attrs.any({
+        attribute: "transitionProperty",
+        multiple: true,
+        string: true,
+      }),
+      transitionDuration: attrs.any({
+        attribute: "transitionDuration",
+        multiple: true,
+        number: true,
+      }),
+      transitionTimingFunction: attrs.any({
+        attribute: "transitionTimingFunction",
+        multiple: true,
+        string: true,
+      }),
+      transitionDelay: attrs.any({
+        attribute: "transitionDelay",
+        multiple: true,
+        number: true,
+      }),
+      transitionBehavior: {
+        allowDiscrete: { transitionBehavior: "allow-discrete" } as any,
+        normal: { transitionBehavior: "normal" } as any,
+      },
+
+      animationName: attrs.any({ attribute: "animationName", any: true }),
+      animationDuration: attrs.any({
+        attribute: "animationDuration",
+        multiple: true,
+        number: true,
+        time: true,
+      }),
+      animationDelay: attrs.any({
+        attribute: "animationDelay",
+        multiple: true,
+        number: true,
+        time: true,
+      }),
+      animationTimingFunction: attrs.any({
+        attribute: "animationTimingFunction",
+        multiple: true,
+        tokens: {
+          linear: "linear",
+          ease: "ease",
+          easeIn: "ease-in",
+          easeOut: "ease-out",
+          easeInOut: "ease-in-out",
+          stepStart: "step-start",
+          stepEnd: "step-end",
+        },
+      }),
+      animationDirection: attrs.any({
+        attribute: "animationDirection",
+        multiple: true,
+        tokens: {
+          normal: "normal",
+          reverse: "reverse",
+          alternate: "alternate",
+          alternateReverse: "alternate-reverse",
+        },
+      }),
+      animationIterationCount: attrs.any({
+        attribute: "animationIterationCount",
+        multiple: true,
+        number: true,
+        tokens: {
+          infinity: "infinite",
+        },
+      }),
+      animationFillMode: attrs.any({
+        attribute: "animationFillMode",
+        multiple: true,
+        tokens: {
+          forwards: "forwards",
+          backwards: "backwards",
+          both: "both",
+          none: "none",
+        },
+      }),
+      animationPlayState: attrs.any({
+        attribute: "animationPlayState",
+        multiple: true,
+        tokens: {
+          running: "running",
+          paused: "paused",
+        },
+      }),
     },
-
-    // @ts-expect-error
-    overflowXVisible: { true: { overflowX: 'visible' } },
-    // @ts-expect-error
-    overflowXHidden: { true: { overflowX: 'hidden' } },
-    // @ts-expect-error
-    overflowXScroll: { true: { overflowX: 'scroll' } },
-
-    overflowY: {
-      // @ts-expect-error
-      'visible': { overflowY: 'visible' },
-      // @ts-expect-error
-      'hidden': { overflowY: 'hidden' },
-      // @ts-expect-error
-      'scroll': { overflowY: 'scroll' },
-    },
-
-    // @ts-expect-error
-    overflowYVisible: { true: { overflowY: 'visible' } },
-    // @ts-expect-error
-    overflowYHidden: { true: { overflowY: 'hidden' } },
-    // @ts-expect-error
-    overflowYScroll: { true: { overflowY: 'scroll' } },
-
-    display: {
-      'none': { display: 'none' },
-      'flex': { display: 'flex' },
-    },
-
-
-    visibility: {
-      // @ts-expect-error
-      'visible': { visibility: 'visible' },
-      // @ts-expect-error
-      'hidden': { visibility: 'hidden' },
-      // @ts-expect-error
-      'collapse': { visibility: 'collapse' },
-    },
-
-    // @ts-expect-error
-    visibilityVisible: { true: { visibility: 'visible' } },
-    // @ts-expect-error
-    visibilityHidden: { true: { visibility: 'hidden' } },
-    // @ts-expect-error
-    visibilityCollapse: { true: { visibility: 'collapse' } },
-
-    backdropFilter: surfaced.any({ attribute: 'backdropFilter', string: true }),
-
-    backfaceVisibility: {
-      hidden: { backfaceVisibility: 'hidden' },
-      visible: { backfaceVisibility: 'visible' },
-    },
-
-    elevation: surfaced.any({ attribute: 'elevation', number: true }),
-    boxShadow: surfaced.any({ attribute: 'boxShadow', string: true }),
-
-    overscrollBehavior: {
-      // @ts-expect-error
-      'auto': { overscrollBehavior: 'auto' },
-      // @ts-expect-error
-      'contain': { overscrollBehavior: 'contain' },
-      // @ts-expect-error
-      'none': { overscrollBehavior: 'none' },
-    },
-
-    userSelect: {
-      // @ts-expect-error
-      'none': { userSelect: 'none' },
-      // @ts-expect-error
-      'text': { userSelect: 'text' },
-      // @ts-expect-error
-      'all': { userSelect: 'all' },
-      // @ts-expect-error
-      'auto': { userSelect: 'auto' },
-    },
-
-    willChange: surfaced.any({ attribute: 'willChange', string: true }),
-    pointerEvents: {
-      'auto': { pointerEvents: 'auto' },
-      'none': { pointerEvents: 'none' },
-      'box-none': { pointerEvents: 'box-none' },
-      'box-only': { pointerEvents: 'box-only' },
-    },
-
-    direction: {
-      'ltr': { direction: 'ltr' },
-      'rtl': { direction: 'rtl' },
-      'inherit': { direction: 'inherit' },
-    },
-
-    mixBlendMode: {
-      'normal': { mixBlendMode: 'normal' },
-      'multiply': { mixBlendMode: 'multiply' },
-      'screen': { mixBlendMode: 'screen' },
-      'overlay': { mixBlendMode: 'overlay' },
-      'darken': { mixBlendMode: 'darken' },
-      'lighten': { mixBlendMode: 'lighten' },
-      'color-dodge': { mixBlendMode: 'color' },
-      'color-burn': { mixBlendMode: 'color' },
-      'hard-light': { mixBlendMode: 'hard-light' },
-      'soft-light': { mixBlendMode: 'soft-light' },
-      'difference': { mixBlendMode: 'difference' },
-      'exclusion': { mixBlendMode: 'exclusion' },
-      'hue': { mixBlendMode: 'hue' },
-      'saturation': { mixBlendMode: 'saturation' },
-      'color': { mixBlendMode: 'color' },
-      'luminosity': { mixBlendMode: 'luminosity' },
-    },
-
-    clip: surfaced.any({ attribute: 'clip', string: true }),
-    filter: surfaced.any({ attribute: 'filter', string: true }),
-    isolation: {
-      'auto': { isolation: 'auto' },
-      'isolate': { isolation: 'isolate' },
-    },
-    overscrollBehaviorX: {
-      // @ts-expect-error
-      'auto': { overscrollBehaviorX: 'auto' },
-      // @ts-expect-error
-      'contain': { overscrollBehaviorX: 'contain' },
-      // @ts-expect-error
-      'none': { overscrollBehaviorX: 'none' },
-    },
-    overscrollBehaviorY: {
-      // @ts-expect-error
-      'auto': { overscrollBehaviorY: 'auto' },
-      // @ts-expect-error
-      'contain': { overscrollBehaviorY: 'contain' },
-      // @ts-expect-error
-      'none': { overscrollBehaviorY: 'none' },
-    },
-    rotation: surfaced.any({ attribute: 'rotation', string: true }),
-
-    // Animations & Transition
-    transitionProperty: surfaced.any({ attribute: 'transitionProperty', multiple: true, string: true }),
-    transitionDuration: surfaced.any({ attribute: 'transitionDuration', multiple: true, number: true }),
-    transitionTimingFunction: surfaced.any({ attribute: 'transitionTimingFunction', multiple: true, string: true }),
-    transitionDelay: surfaced.any({ attribute: 'transitionDelay', multiple: true, number: true }),
-    transitionBehavior: {
-      allowDiscrete: { transitionBehavior: 'allow-discrete' } as any,
-      normal: { transitionBehavior: 'normal' } as any,
-    },
-
-    animationName: surfaced.any({ attribute: 'animationName', any: true }),
-    animationDuration: surfaced.any({ attribute: 'animationDuration', multiple: true, number: true, time: true }),
-    animationDelay: surfaced.any({ attribute: 'animationDelay', multiple: true, number: true, time: true }),
-    animationTimingFunction: surfaced.any({
-      attribute: 'animationTimingFunction', multiple: true, tokens: {
-        'linear': 'linear',
-        'ease': 'ease',
-        'easeIn': 'ease-in',
-        'easeOut': 'ease-out',
-        'easeInOut': 'ease-in-out',
-        'stepStart': 'step-start',
-        'stepEnd': 'step-end',
-      }
-    }),
-    animationDirection: surfaced.any({
-      attribute: 'animationDirection', multiple: true, tokens: {
-        normal: 'normal',
-        reverse: 'reverse',
-        alternate: 'alternate',
-        alternateReverse: 'alternate-reverse',
-      }
-    }),
-    animationIterationCount: surfaced.any({
-      attribute: 'animationIterationCount', multiple: true, number: true, tokens: {
-        'infinity': 'infinite',
-      }
-    }),
-    animationFillMode: surfaced.any({
-      attribute: 'animationFillMode', multiple: true, tokens: {
-        forwards: 'forwards',
-        backwards: 'backwards',
-        both: 'both',
-        none: 'none',
-      }
-    }),
-    animationPlayState: surfaced.any({
-      attribute: 'animationPlayState', 
-      multiple: true, 
-      tokens: {
-        running: 'running',
-        paused: 'paused',
-      }
-    }),
-  },
-}))
+  }));

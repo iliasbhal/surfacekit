@@ -15,7 +15,7 @@ jest.mock('expo-font', () => ({
 
 describe('Surface', () => {
   it('throw if component is not wrapped in a ThemeProvider', () => {
-    const Flex = surfaced(View).with((tokens) => ({
+    const Flex = surfaced(View).with(({ theme, attrs }) => ({
       flex: 1,
       flexDirection: 'row',
       alignItems: 'center',
@@ -67,7 +67,7 @@ describe('Surface', () => {
   });
 
   it('should have access to the current theme', () => {
-    const Flex = surfaced(View).with((theme) => ({
+    const Flex = surfaced(View).with(({ theme, attrs }) => ({
       backgroundColor: theme.surfaces.surface0
     }));
 
@@ -107,9 +107,9 @@ describe('Surface', () => {
     }
 
     const surfaced = createSurfaced<GroteskThemeShape>();
-    const Flex = surfaced(View).with((tokens) => ({
-      backgroundColor: tokens.give.me.a.color('hot'),
-      borderColor: tokens.give.me.a.color('cold'),
+    const Flex = surfaced(View).with(({ theme, attrs }) => ({
+      backgroundColor: theme.give.me.a.color('hot'),
+      borderColor: theme.give.me.a.color('cold'),
     }))
 
 
@@ -128,7 +128,7 @@ describe('Surface', () => {
   });
 
   it('can define boolean variants ( only true defined )', () => {
-    const Flex = surfaced(View).with((theme) => ({
+    const Flex = surfaced(View).with(({ theme, attrs }) => ({
       variants: {
         danger: {
           true: {
@@ -155,7 +155,7 @@ describe('Surface', () => {
   });
 
   it('can define boolean variants ( only false defined )', () => {
-    const Flex = surfaced(View).with((theme) => ({
+    const Flex = surfaced(View).with(({ theme, attrs }) => ({
       variants: {
         danger: {
           false: {
@@ -182,7 +182,7 @@ describe('Surface', () => {
   });
 
   it('can define style variants', () => {
-    const Flex = surfaced(View).with((theme) => ({
+    const Flex = surfaced(View).with(({ theme, attrs }) => ({
       variants: {
         danger: {
           true: {
@@ -216,7 +216,7 @@ describe('Surface', () => {
   })
 
   it('should merge variants if parent and child variant have the same name', () => {
-    const Base = surfaced(View).with((theme) => ({
+    const Base = surfaced(View).with(({ theme, attrs }) => ({
       variants: {
         layer1: {
           true: {
@@ -227,7 +227,7 @@ describe('Surface', () => {
       },
     }));
 
-    const Parent = surfaced(Base).with((theme) => ({
+    const Parent = surfaced(Base).with(({ theme, attrs }) => ({
       variants: {
         layer1: {
           true: {
@@ -303,7 +303,7 @@ describe('Surface', () => {
   })
 
   it('can compose components build with surface', () => {
-    const Base = surfaced(View).with((theme) => ({
+    const Base = surfaced(View).with(({ theme, attrs }) => ({
       backgroundColor: theme.surfaces.surface0,
       height: 300,
       width: 300,
@@ -318,7 +318,7 @@ describe('Surface', () => {
       },
     }));
 
-    const Wrap = surfaced(Base).with((theme) => ({
+    const Wrap = surfaced(Base).with(({ theme, attrs }) => ({
       width: 100,
       variants: {
         parent: {
@@ -331,7 +331,7 @@ describe('Surface', () => {
       },
     }));
 
-    const WrapWrap = surfaced(Wrap).with((theme) => ({
+    const WrapWrap = surfaced(Wrap).with(({ theme, attrs }) => ({
       opacity: 0.5,
 
       transition: {
@@ -404,7 +404,7 @@ describe('Surface', () => {
   })
 
   it('should follow orders of variants', () => {
-    const Base = surfaced(View).with((theme) => ({
+    const Base = surfaced(View).with(({ theme, attrs }) => ({
       variants: {
         layer1: {
           true: {
@@ -451,14 +451,14 @@ describe('Surface', () => {
   })
 
   it('can use variant creator to create generic variants', () => {
-    const Flex = surfaced(View).with((theme) => ({
+    const Flex = surfaced(View).with(({ theme, attrs }) => ({
       variants: {
-        width: surfaced.any({ 
+        width: attrs.any({ 
           attribute: 'width',
           number: true, 
           percentage: true,
         }),
-        height: surfaced.any({ 
+        height: attrs.any({ 
           attribute: 'height',
           number: true, 
           percentage: true,
@@ -482,13 +482,13 @@ describe('Surface', () => {
   })
 
   it('can use tokens in variants', () => {
-    const Flex = surfaced(View).with((tokens) => ({
+    const Flex = surfaced(View).with(({ theme, attrs }) => ({
       variants: {
-        gap: surfaced.any({ 
+        gap: attrs.any({ 
           attribute: 'gap',
           number: true, 
           percentage: true, 
-          tokens: tokens.spacing,
+          tokens: theme.spacing,
         }),
       },
     }));
@@ -509,13 +509,13 @@ describe('Surface', () => {
   })
 
   it('can use tokens in variants (mapped to falsy values)', () => {
-    const Flex = surfaced(View).with((tokens) => ({
+    const Flex = surfaced(View).with(({ theme, attrs }) => ({
       variants: {
-        gap: surfaced.any({ 
+        gap: attrs.any({ 
           attribute: 'gap',
           number: true, 
           percentage: true, 
-          tokens: tokens.spacing,
+          tokens: theme.spacing,
         }),
       },
     }));
@@ -531,13 +531,13 @@ describe('Surface', () => {
   })
 
   it('can use tokens in variants (number = 0)', () => {
-    const Flex = surfaced(View).with((tokens) => ({
+    const Flex = surfaced(View).with(({ theme, attrs }) => ({
       variants: {
-        gap: surfaced.any({ 
+        gap: attrs.any({ 
           attribute: 'gap',
           number: true, 
           percentage: true, 
-          tokens: tokens.spacing,
+          tokens: theme.spacing,
         }),
       },
     }));
@@ -553,12 +553,12 @@ describe('Surface', () => {
   })
 
   it('can compute variant dynamically', () => {
-    const Spacer = surfaced(View).with((tokens) => ({
+    const Spacer = surfaced(View).with(({ theme, attrs }) => ({
       variants: {
-        size: surfaced.any({ 
+        size: attrs.any({ 
           number: true, 
           percentage: true, 
-          tokens: tokens.spacing,
+          tokens: theme.spacing,
           compute: (value: any) => {
             return {
               padding: value / 2,
@@ -588,12 +588,12 @@ describe('Surface', () => {
       }
     });
 
-    const Spacer = surfaced(View).with((tokens) => ({
+    const Spacer = surfaced(View).with(({ theme, attrs }) => ({
       variants: {
-        size: surfaced.any({ 
+        size: attrs.any({ 
           number: true, 
           percentage: true, 
-          tokens: tokens.spacing,
+          tokens: theme.spacing,
           compute: dynamicSpy,
         }),
       },
@@ -616,15 +616,15 @@ describe('Surface', () => {
   })
 
   it('should order accumulated variants by order of prop', () => {
-    const Spacer = surfaced(View).with((tokens) => ({
+    const Spacer = surfaced(View).with(({ theme, attrs }) => ({
       variants: {
-        rotate: surfaced.any({ 
+        rotate: attrs.any({ 
           accumulate: 'transform',
           attribute: 'rotate',
           number: true, 
           degree: true
         }),
-        translateX: surfaced.any({
+        translateX: attrs.any({
           accumulate: 'transform',
           attribute: 'translateX',
           tokens: {
@@ -672,25 +672,25 @@ describe('Surface', () => {
   })
 
   it('can use token in accumulated variants', () => {
-    const Spacer = surfaced(View).with((tokens) => ({
+    const Spacer = surfaced(View).with(({ theme, attrs }) => ({
       variants: {
-        rotate: surfaced.any({ 
+        rotate: attrs.any({ 
           accumulate: 'transform',
           attribute: 'rotate',
           number: true, 
           degree: true,
         }),
-        translateX: surfaced.any({
+        translateX: attrs.any({
           accumulate: 'transform',
           attribute: 'translateX',
           number: true,
-          tokens: tokens.spacing, 
+          tokens: theme.spacing, 
         }),
-        translateY: surfaced.any({
+        translateY: attrs.any({
           accumulate: 'transform',
           attribute: 'translateY',
           number: true,
-          tokens: tokens.spacing, 
+          tokens: theme.spacing, 
         }),
       },
     }));
@@ -734,9 +734,9 @@ describe('Surface', () => {
 
   it('can allow for multiple variants', () => {
 
-    const Spacer = surfaced(View).with((tokens) => ({
+    const Spacer = surfaced(View).with(({ theme, attrs }) => ({
       variants: {
-        transitionProperty: surfaced.any({ 
+        transitionProperty: attrs.any({ 
           attribute: 'transitionProperty',
           multiple: true,
           string: true,
@@ -774,11 +774,11 @@ describe('Surface', () => {
     } as const
 
     const surfaced = createSurfaced<typeof theme>();
-    const Flex = surfaced(View).with((tokens) => ({
+    const Flex = surfaced(View).with(({ theme, attrs }) => ({
       variants: {
-        color: surfaced.any({
+        color: attrs.any({
           attribute: 'color',
-          tokens: tokens.colorssssss,
+          tokens: theme.colorssssss,
         }),
       }
     }))
@@ -803,9 +803,9 @@ describe('Surface', () => {
       very: 'very-backwards',
     } as const;
 
-    const Spacer = surfaced(View).with((palette) => ({
+    const Spacer = surfaced(View).with(({ attrs }) => ({
       variants: {
-        multiple: surfaced.any({ 
+        multiple: attrs.any({ 
           attribute: 'multiple',
           multiple: true,
           number: true,
@@ -832,12 +832,12 @@ describe('Surface', () => {
   });
 
   it('should be able to use palette path to reference fonts', () => {
-    const TextBase = surfaced(View).with((tokens) => ({
+    const TextBase = surfaced(View).with(({ theme, attrs }) => ({
       variants: {
-        fontFamily: surfaced.any({ 
+        fontFamily: attrs.any({ 
           attribute: 'fontFamily',
           fonts: true, 
-          tokens: tokens.fonts,
+          tokens: theme.fonts,
         }),
       }
     }));
@@ -878,9 +878,9 @@ describe('Surface', () => {
       very: 'very-backwards',
     } as const;
 
-    const Spacer = surfaced(View).with((palette) => ({
+    const Spacer = surfaced(View).with(({ theme, attrs }) => ({
       variants: {
-        marginLeft: surfaced.any({ attribute: 'marginLeft', number: true, tokens: palette.spacing }),
+        marginLeft: attrs.any({ attribute: 'marginLeft', number: true, tokens: theme.spacing }),
       },
     }));
 

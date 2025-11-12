@@ -29,7 +29,6 @@ import {
   useComponentOverrides,
 } from "./lib/useComponentOverrides";
 import { OrientationProvider, useDeviceOrientation } from "./lib/useDeviceOrientation";
-import { KeyboardProvider } from "./lib/useKeyboardHeight";
 import { useMediaQuery } from "./lib/useMediaQuery";
 import { ScreenDimensionProvider } from "./ScreenDimension";
 
@@ -81,11 +80,9 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
     return (
       <ScreenDimensionProvider>
         <OrientationProvider>
-          <KeyboardProvider>
-            <surfaceContext.Provider value={props.theme}>
-              {props.children}
-            </surfaceContext.Provider>
-          </KeyboardProvider>
+          <surfaceContext.Provider value={props.theme}>
+            {props.children}
+          </surfaceContext.Provider>
         </OrientationProvider>
       </ScreenDimensionProvider>
     );
@@ -123,23 +120,34 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
 
   const configByComponent = new Map<any, any>();
 
+  const attrs = {
+    any: surfaceAny,
+    boolean: booleanStyle,
+  }
+
+  type StyleBuilderContext = {
+    theme: ThemeValue;
+    attrs: typeof attrs;
+  }
+
   const surfaced = <T extends StylableComponent>(Component: T) => {
 
     const createStylsheetManager = (
-      styleFactory: (theme: ThemeValue) => WithStyle<T>,
+      styleFactory: (ctx: StyleBuilderContext) => WithStyle<T>,
     ) => {
       type StoreStyles = ReturnType<typeof createContext>;
 
       const stylesheetsMap = new Map<ThemeValue, StoreStyles>();
 
-      const getMergedStyleConfig = (
-        theme: ThemeValue,
-      ): ReturnType<typeof styleFactory> => {
-        const currentConfig = styleFactory(theme);
+      const getMergedStyleConfig = (ctx: StyleBuilderContext): ReturnType<typeof styleFactory> => {
+
+
+
+        const currentConfig = styleFactory(ctx);
 
         const parentsurfaceConfig = configByComponent.get(Component)
         const { styleConfig: parentConfig } =
-          parentsurfaceConfig?.styleManager.getStylesheetForTheme(theme) || {};
+          parentsurfaceConfig?.styleManager.getStylesheetForTheme(ctx.theme) || {};
 
         const merged = {
           ...parentConfig,
@@ -170,7 +178,11 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
       };
 
       const createContext = (theme: ThemeValue) => {
-        const { merged, current } = getMergedStyleConfig(theme);
+        const { merged, current } = getMergedStyleConfig({
+          theme,
+          attrs,
+        });
+
         const { dynamic, variants, transition, ...base } = merged;
 
         const hasBaseStylesheet = Object.keys(base).length > 0;
@@ -447,12 +459,10 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
           return <Component as={Component2} {...props} />
         }
       },
-      with: <Factory extends (theme: ThemeValue) => WithStyle<T>>(
+      with: <Factory extends (ctx: StyleBuilderContext) => WithStyle<T>>(
         styleFactory: Factory,
       ) => {
         const styleManager = createStylsheetManager(styleFactory);
-
-
 
         const surfaceConfig = configByComponent.get(Component);
 
@@ -741,8 +751,6 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
 
     useMediaQuery: useMediaQuery,
     Provider: ThemeProvider,
-    any: surfaceAny,
-    boolean: booleanStyle,
   });
 };
 

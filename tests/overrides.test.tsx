@@ -8,30 +8,30 @@ type TestTheme = typeof themes[keyof typeof themes];
 const surfaced = createSurfaced<TestTheme>();
 
 describe('Surface Overrides', () => {
-  const Flex = surfaced(View).with((tokens) => ({
+  const Flex = surfaced(View).with(({ theme, attrs }) => ({
     variants: {
       magic: {
         true: {
           backgroundColor: 'red',
         }
       },
-      paddingTop: surfaced.any({ 
+      paddingTop: attrs.any({ 
         attribute: 'paddingTop',
         number: true, 
         percentage: true,
-        tokens: tokens.spacing,
+        tokens: theme.spacing,
       }),
-      width: surfaced.any({ 
+      width: attrs.any({ 
         attribute: 'width',
         number: true, 
         percentage: true,
-        tokens: tokens.spacing,
+        tokens: theme.spacing,
       }),
-      height: surfaced.any({ 
+      height: attrs.any({ 
         attribute: 'height',
         number: true, 
         percentage: true,
-        tokens: tokens.spacing,
+        tokens: theme.spacing,
       }),
     },
   }));
@@ -144,24 +144,24 @@ describe('Surface Overrides', () => {
   })
 
   it('can override props using the override prop', () => {
-    const Flex = surfaced(View).with((tokens) => ({
+    const Flex = surfaced(View).with(({ theme, attrs }) => ({
       variants: {
         magic: {
           true: {
             backgroundColor: 'red',
           }
         },
-        width: surfaced.any({ 
+        width: attrs.any({ 
           attribute: 'width',
           number: true, 
           percentage: true,
-          tokens: tokens.spacing,
+          tokens: theme.spacing,
         }),
-        height: surfaced.any({ 
+        height: attrs.any({ 
           attribute: 'height',
           number: true, 
           percentage: true,
-          tokens: tokens.spacing,
+          tokens: theme.spacing,
         }),
       },
     }));
@@ -195,24 +195,24 @@ describe('Surface Overrides', () => {
   })
 
   it('can override props using the override prop', () => {
-    const Flex = surfaced(View).with((tokens) => ({
+    const Flex = surfaced(View).with(({ theme, attrs }) => ({
       variants: {
         magic: {
           true: {
             backgroundColor: 'red',
           }
         },
-        width: surfaced.any({ 
+        width: attrs.any({ 
           attribute: 'width',
           number: true, 
           percentage: true,
-          tokens: tokens.spacing,
+          tokens: theme.spacing,
         }),
-        height: surfaced.any({ 
+        height: attrs.any({ 
           attribute: 'height',
           number: true, 
           percentage: true,
-          tokens: tokens.spacing,
+          tokens: theme.spacing,
         }),
       },
     }));
@@ -240,7 +240,7 @@ describe('Surface Overrides', () => {
   });
 
   it('can override props using the override prop', () => {
-    const Flex = surfaced(View).with((tokens) => ({
+    const Flex = surfaced(View).with(({ theme, attrs }) => ({
       variants: {
         colored: {
           'hot': {
@@ -284,12 +284,12 @@ describe('Surface Overrides', () => {
       style.transform.push({ [key]: value });
     };
 
-    const Flex = surfaced(View).with((tokens) => ({
+    const Flex = surfaced(View).with(({ theme, attrs }) => ({
       variants: {
-        rotateZ: surfaced.any({ custom: transform, attribute: 'rotateZ', number: true, angle: true }),
-        translateX: surfaced.any({ custom: transform, attribute: 'translateX', number: true }),
-        scale: surfaced.any({ custom: transform, attribute: 'scale', number: true, }),
-        skewX: surfaced.any({ custom: transform, attribute: 'skewX', number: true, }),
+        rotateZ: attrs.any({ custom: transform, attribute: 'rotateZ', number: true, angle: true }),
+        translateX: attrs.any({ custom: transform, attribute: 'translateX', number: true }),
+        scale: attrs.any({ custom: transform, attribute: 'scale', number: true, }),
+        skewX: attrs.any({ custom: transform, attribute: 'skewX', number: true, }),
       },
     }));
     

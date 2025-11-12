@@ -1,4 +1,8 @@
 import { defineConfig } from 'tsup'
+import packageJSON from './package.json'
+
+const devDependencies = Object.keys(packageJSON.devDependencies);
+const peerDependencies = Object.keys(packageJSON.peerDependencies);
 
 export default defineConfig({
   entry: ['src/index.ts'],
@@ -10,14 +14,8 @@ export default defineConfig({
   treeshake: true,
   minify: false,
   external: [
-    "react",
-    "react-native",
-    "expo-font",
-    "expo-screen-orientation",
-    "react-native-gesture-handler",
-    "react-native-keyboard-controller",
-    "react-native-reanimated",
-    "react-native-worklets",
+    ...devDependencies,
+    ...peerDependencies,
   ],
   esbuildOptions(options) {
     options.platform = 'browser'
