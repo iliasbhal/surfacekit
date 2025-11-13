@@ -6695,10 +6695,10 @@ supports-preserve-symlinks-flag@^1.0.0:
   resolved "https://registry.yarnpkg.com/supports-preserve-symlinks-flag/-/supports-preserve-symlinks-flag-1.0.0.tgz#6eda4bd344a3c94aea376d4cc31bc77311039e09"
   integrity sha512-ot0WnXS9fgdkgIcePe6RHNk1WA8+muPa6cSjeR3V8K27q9BB1rTE3R1p7Hv0z1ZyAc8s6Vvv8DIyWf681MAt0w==
 
-surfacekit@^0.0.10:
-  version "0.0.10"
-  resolved "https://registry.yarnpkg.com/surfacekit/-/surfacekit-0.0.10.tgz#1c54538729820b9bff1d07d317b4f1895c2116f4"
-  integrity sha512-v3Yz7HpKp5ve7ySgrGX2OVkcABOA/3KBikoKvxlFMDZ5Ui1OzP+GC8D3jCI0yx+VQdYdb8x/TSUtd0vxutE40g==
+surfacekit@^0.0.11:
+  version "0.0.11"
+  resolved "https://registry.yarnpkg.com/surfacekit/-/surfacekit-0.0.11.tgz#d57e0fab3a78af06e7b24229732559c50e6d47ba"
+  integrity sha512-vHOUe7ib75fTP8pX4mi0Vdz0AMY5WIGD5u0sKr6iU9XJZTfTLH/U2harWBwQN8/5RjNSjyiOiJonDKRuJEe/SA==
 
 tar@^7.4.3:
   version "7.5.2"
