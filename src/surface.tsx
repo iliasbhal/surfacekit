@@ -1,6 +1,6 @@
 import { useFonts as useExpoFonts } from "expo-font";
 import React, { JSXElementConstructor, PropsWithChildren } from "react";
-import { StyleSheet } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { GestureDetector, GestureType } from "react-native-gesture-handler";
 import {
   AnimatedProps,
@@ -9,7 +9,7 @@ import {
 import { AnimatePresenceContext } from "./AnimatePresence";
 import {
   AnyConfig,
-  anyStyle,
+  attribute,
   booleanStyle,
   VariantFactoryKey,
 } from "./lib/anyConfig";
@@ -31,6 +31,8 @@ import {
 import { OrientationProvider, useDeviceOrientation } from "./lib/useDeviceOrientation";
 import { useMediaQuery } from "./lib/useMediaQuery";
 import { ScreenDimensionProvider } from "./ScreenDimension";
+import { createViewBase } from "./createViewBase";
+import { createTextBase } from "./createTextBase";
 
 export {
   Interaction,
@@ -41,15 +43,29 @@ export interface SurfaceTheme extends Record<string, any> {
   breakpoints: Record<string, any>
   fontSizes: Record<string, any>
   size: Record<string, any>
-  colors: Record<string, any>
+  colors: { [key: string]: any }
 }
+
+export const getTypedTheme = <T extends SurfaceTheme>(theme: T) => {
+  const colors = theme.colors as T['colors'];
+  const breakpoints = theme.colors as T['breakpoints'];
+  const fontSizes = theme.colors as T['fontSizes'];
+  const size = theme.colors as T['size'];
+  const fonts = theme.colors as T['fonts'];
+  return {
+    colors,
+    breakpoints,
+    fontSizes,
+    size,
+    fonts,
+  };
+};
 
 export const createTheme = <T extends SurfaceTheme>(theme: T) : T => {
   return theme;
 }
 
 export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
-  const surfaceAny = anyStyle();
   const useFonts = () => {
     const theme = useSurfaceTheme();
     const fontsWithFlattenPaths = withFontsFamilyKeys(
@@ -93,7 +109,7 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
     | JSXElementConstructor<AnimatedProps<Props>>;
   type StylableComponent = CompElement<{ style?: any }>;
   type StyleFor<Component extends StylableComponent> =
-    React.ComponentProps<Component>["style"];
+    Partial<React.ComponentProps<Component>["style"]>;
   type Variants<Comp extends StylableComponent> = Record<
     string,
     Record<string, StyleFor<Comp>> | Record<string, StyleFor<Comp>>[]
@@ -121,7 +137,7 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
   const configByComponent = new Map<any, any>();
 
   const attrs = {
-    any: surfaceAny,
+    any: attribute,
     boolean: booleanStyle,
   }
 
@@ -459,9 +475,7 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
           return <Component as={Component2} {...props} />
         }
       },
-      with: <Factory extends (ctx: StyleBuilderContext) => WithStyle<T>>(
-        styleFactory: Factory,
-      ) => {
+      with: <Factory extends (ctx: { theme: ThemeValue; attrs: typeof attrs; }) => WithStyle<T>>(styleFactory: Factory) => {
         const styleManager = createStylsheetManager(styleFactory);
 
         const surfaceConfig = configByComponent.get(Component);
@@ -482,7 +496,7 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
             : Variants[K];
 
         type VariantProps<SurfaceStyle extends WithStyle<T>> = {
-          [key in keyof SurfaceStyle["variants"]]?: AcceptedValues<SurfaceStyle["variants"], key>;
+          [key in keyof SurfaceStyle["variants"]]?: AcceptedValues<NonNullable<SurfaceStyle["variants"]>, key>;
         }
 
         type SurfaceCustomProps = {
@@ -509,7 +523,7 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
           return RootComp;
         };
 
-        const component = <Props extends SurfaceProps<VariantStyle> & SurfaceCustomProps>(props: Props & (Props extends { as: any} ? React.ComponentProps<Props['as']> : {})) => {
+        const component = <Props extends SurfaceProps<VariantStyle & { AAAA: true}> & SurfaceCustomProps>(props: Props & (Props extends { as: any} ? React.ComponentProps<Props['as']> : {})) => {
           const debug = (...args: any[]) => props.debug && console.log(...args);
 
           const theme = useSurfaceTheme();
@@ -716,6 +730,10 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
         });
 
         return Object.assign(component, {
+          __types: {
+            Props: {} as VariantStyle,
+          },
+
           useVariant: (variant: string, value: any) => {
             const theme = useSurfaceTheme();
 
@@ -731,9 +749,15 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
   };
 
   return Object.assign(surfaced, {
+    __types: {
+      ThemeValue: {} as ThemeValue,
+    },
+
     useTheme: useSurfaceTheme,
     useFonts: useFonts,
     useOrientation: useDeviceOrientation,
+    useMediaQuery: useMediaQuery,
+    Provider: ThemeProvider,
 
     useVariantStyle: (component: StylableComponent, variant: string, value: any) => {
       const theme = useSurfaceTheme();
@@ -748,10 +772,20 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
       const stylesheet = styles.variantHandler.getStylesheet({ raw: true });
       return stylesheet
     },
-
-    useMediaQuery: useMediaQuery,
-    Provider: ThemeProvider,
+    createView: () => {
+      return surfaced(View).with(ctx => {
+        const variants =  createViewBase(ctx.theme) ;
+        return variants;
+      });
+    },
+    createText: () => {
+      return surfaced(Text).with(ctx => {
+        const variants =  createTextBase(ctx.theme) ;
+        return variants;
+      });
+    }
   });
+
 };
 
 

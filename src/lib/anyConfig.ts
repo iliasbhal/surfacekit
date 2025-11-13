@@ -36,7 +36,7 @@ type ResultFor<A extends string, Config extends AnyConfig<A>> =
 
 export const VariantFactoryKey = "__InternalAnyConfig__";
 
-export const anyStyle = () => <A extends string, C extends AnyConfig<A>>(config: C): C['multiple'] extends true ? ResultFor<A, C>[] : ResultFor<A, C> => {
+export const attribute = <A extends string, C extends AnyConfig<A>>(config: C): C['multiple'] extends true ? ResultFor<A, C>[] : ResultFor<A, C> => {
   return {
     [VariantFactoryKey]: config
   } as any
