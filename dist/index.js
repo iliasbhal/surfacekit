@@ -1838,10 +1838,10 @@ var createTextBase = (rawTheme) => {
 // src/surface.tsx
 var getTypedTheme = (theme) => {
   const colors = theme.colors;
-  const breakpoints = theme.colors;
-  const fontSizes = theme.colors;
-  const size = theme.colors;
-  const fonts = theme.colors;
+  const breakpoints = theme.breakpoints;
+  const fontSizes = theme.fontSizes;
+  const size = theme.size;
+  const fonts = theme.fonts;
   return {
     colors,
     breakpoints,
@@ -1891,7 +1891,7 @@ var createSurfaced2 = () => {
           variants: deepAssign(
             {},
             parentConfig?.variants,
-            currentConfig.variants
+            currentConfig.variants || {}
           ),
           dynamic: !parentConfig?.dynamic ? currentConfig.dynamic : !currentConfig.dynamic ? void 0 : (props) => {
             return {
@@ -2284,6 +2284,9 @@ var createSurfaced2 = () => {
         return Object.assign(component, {
           __types: {
             Props: {}
+          },
+          __internals: {
+            styleManager
           },
           useVariant: (variant, value) => {
             const theme = useSurfaceTheme();
