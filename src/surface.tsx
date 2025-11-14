@@ -48,10 +48,10 @@ export interface SurfaceTheme extends Record<string, any> {
 
 export const getTypedTheme = <T extends SurfaceTheme>(theme: T) => {
   const colors = theme.colors as T['colors'];
-  const breakpoints = theme.colors as T['breakpoints'];
-  const fontSizes = theme.colors as T['fontSizes'];
-  const size = theme.colors as T['size'];
-  const fonts = theme.colors as T['fonts'];
+  const breakpoints = theme.breakpoints as T['breakpoints'];
+  const fontSizes = theme.fontSizes as T['fontSizes'];
+  const size = theme.size as T['size'];
+  const fonts = theme.fonts as T['fonts'];
   return {
     colors,
     breakpoints,
@@ -161,6 +161,8 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
 
         const currentConfig = styleFactory(ctx);
 
+
+
         const parentsurfaceConfig = configByComponent.get(Component)
         const { styleConfig: parentConfig } =
           parentsurfaceConfig?.styleManager.getStylesheetForTheme(ctx.theme) || {};
@@ -172,7 +174,7 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
           variants: deepAssign(
             {},
             parentConfig?.variants,
-            currentConfig.variants,
+            currentConfig.variants || {},
           ),
 
           dynamic: !parentConfig?.dynamic
@@ -733,6 +735,10 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
           __types: {
             Props: {} as VariantStyle,
           },
+
+          __internals: {
+            styleManager,
+          },  
 
           useVariant: (variant: string, value: any) => {
             const theme = useSurfaceTheme();
