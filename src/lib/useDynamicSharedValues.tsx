@@ -45,6 +45,7 @@ export function useDynamicSharedValues() {
       return hasChanged;
     },
     init: (name: string, initial: any) => {
+      order.push(name);
       if (ref[name]?.shared) return false;
       // console.log('styleProp - init', name, initial);
       ref[name] = {
@@ -59,7 +60,6 @@ export function useDynamicSharedValues() {
     set: (name: string, next: any) => {
       // console.log('ref', name, next, ref);
       if (!ref[name].shared) return;
-      order.push(name);
       ref[name].shared.value = next;
     },
 
