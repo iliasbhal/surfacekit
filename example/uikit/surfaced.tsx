@@ -1,4 +1,4 @@
-import { createSurfaced } from "surfacekit";
+import { createSurfaced } from "../surfacekit";
 import * as themes from './theme';
 export * as themes from './theme';
 

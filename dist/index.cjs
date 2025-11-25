@@ -278,6 +278,7 @@ function useDynamicSharedValues() {
       return hasChanged;
     },
     init: (name, initial) => {
+      order.push(name);
       if (ref[name]?.shared) return false;
       ref[name] = {
         shared: Animated.makeMutable(initial),
@@ -289,7 +290,6 @@ function useDynamicSharedValues() {
     },
     set: (name, next) => {
       if (!ref[name].shared) return;
-      order.push(name);
       ref[name].shared.value = next;
     },
     forEach(callback) {
@@ -858,6 +858,7 @@ var transform = (style, config) => {
   });
 };
 var createViewBase = (rawTheme) => {
+  console.log("CREATE VIEW BASE");
   const attrs = {
     any: attribute
   };

@@ -133,6 +133,3 @@ export const dark = createTheme({
     size15: 256,
   }
 } as const);
-
-
-

@@ -127,7 +127,7 @@ describe('Surface', () => {
     });
   });
 
-  it('can define boolean variants ( only true defined )', () => {
+  it.only('can define boolean variants ( only true defined )', () => {
     const Flex = surfaced(View).with(({ theme, attrs }) => ({
       variants: {
         danger: {

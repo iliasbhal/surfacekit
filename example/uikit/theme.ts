@@ -1,5 +1,5 @@
 import * as Inter from '@expo-google-fonts/inter';
-import { createTheme } from "surfacekit";
+import { createTheme } from "../surfacekit";
 
 export const dark = createTheme({
   fonts: {

@@ -1,12 +1,8 @@
 import React from 'react';
 import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
+import { Stack,  } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
-
-if (typeof window !== 'undefined') {
-  window['BBB_REACT'] = React;
-}
 
 import { useColorScheme } from 'react-native';
 import { surfaced, themes } from '@/uikit';
@@ -15,7 +11,11 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView>
       <ThemeProvider>
-        <Stack />
+        <Stack 
+          screenOptions={{
+            headerShown: false,
+          }}
+        />
       </ThemeProvider>
     </GestureHandlerRootView>
   );
