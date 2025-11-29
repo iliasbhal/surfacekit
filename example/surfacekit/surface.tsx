@@ -5,6 +5,7 @@ import { GestureDetector, GestureType } from "react-native-gesture-handler";
 import {
   AnimatedProps,
   BaseAnimationBuilder,
+  useAnimatedRef,
 } from "react-native-reanimated";
 import { AnimatePresenceContext } from "./AnimatePresence";
 import {
@@ -33,6 +34,7 @@ import { useMediaQuery } from "./lib/useMediaQuery";
 import { ScreenDimensionProvider } from "./ScreenDimension";
 import { createViewBase } from "./createViewBase";
 import { createTextBase } from "./createTextBase";
+import { AnimateLayout } from "./AnimateLayout";
 
 export {
   Interaction,
@@ -651,6 +653,7 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
           }
 
           if (transformAcc) {
+            // @ts-expect-error
             styleProp.push({
               transform: Object.entries(
                 transformAcc.reduce((acc: any, curr: any) => {
@@ -672,13 +675,20 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
           // We implement the animated hook if the overrides is defined.
           // Just in case we have an animation in the overrides but no transition or anything in the default props.
           // We should also make it animated if there is style prop because there can be a animatedStyle provided there
+          let animatedRef: ReturnType<typeof useAnimatedRef> | undefined;
           const hasAnimatedHook =
             nextProps.style ||
             nextProps.transition ||
             nextProps.animation ||
             props.overrides;
           if (hasAnimatedHook) {
-            useAnimatedStylesheet(componentProps, presence);
+            animatedRef = useAnimatedRef()
+            useAnimatedStylesheet(
+              animatedRef, 
+              componentProps,
+              presence,
+              props,
+            );
           }
 
           customStylesFunctions.forEach((fn) => fn());
@@ -693,35 +703,42 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
 
 
           presence?.lifecycle?.onRender?.();
-          return conditionalWrap(
-            <ComponentToRender 
-              {...componentProps} 
-              ref={(ref: any) => {
-                compRef.current = ref;
-                if (props.ref) {
-                  if (typeof props.ref === 'function') {
-                    props.ref(ref);
-                  } else {
-                    props.ref.current = ref;
-                  }
+
+          const componentToRender = <ComponentToRender 
+            {...componentProps} 
+            ref={(ref: any) => {
+              compRef.current = ref;
+
+              if (animatedRef) {
+                animatedRef(ref);
+              }
+              if (props.ref) {
+                if (typeof props.ref === 'function') {
+                  props.ref(ref);
+                } else {
+                  props.ref.current = ref;
                 }
-              }} 
-            />,
-            [
-              componentProps.gesture &&
-                ((props) => (
-                  <GestureDetector gesture={componentProps.gesture} {...props}/>
-                )),
-              props.stateId &&
-                ((props) => (
-                  <Interaction.Provider
-                    stateId={props.stateId}
-                    state={overridesHanlder.getOverrideContext(presence)}
-                    {...props}
-                  />
-                )),
-            ],
-          );
+              }
+            }} 
+          />;
+
+          // const isAnimatingSize = props.transition?.['height'] || props.transition?.['width'];
+          // const isLayoutAnimated = !!props.children && isAnimatingSize;
+
+          const wrapped = conditionalWrap(componentToRender,[
+            componentProps.gesture && ((props) => (
+              <GestureDetector gesture={componentProps.gesture} {...props}/>
+            )),
+            props.stateId && ((props) => (
+              <Interaction.Provider
+                stateId={props.stateId}
+                state={overridesHanlder.getOverrideContext(presence)}
+                {...props}
+              />
+            )),
+          ]);
+
+          return wrapped;
         };
 
         configByComponent.set(component, {
@@ -793,5 +810,6 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
   });
 
 };
+
 
 

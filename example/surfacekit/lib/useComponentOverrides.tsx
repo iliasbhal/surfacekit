@@ -81,7 +81,8 @@ export const useComponentOverrides = (props: any) => {
           return isFirstRender;
         },
         get exiting() {
-          return !presence?.isPresent;
+          const isExiting = !presence?.isPresent;
+          return isExiting;
         },
         get hovered() {
           current.activateGesture = true;

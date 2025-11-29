@@ -37,7 +37,6 @@ interface AnimatePresenceProps {
 export const AnimatePresence: React.FC<
   React.PropsWithChildren<AnimatePresenceProps>
 > = (props) => {
-  console.log('ANIMATE PRESENCE ENTER');
   const mode = props.mode || "sync";
   const propagate = props.propagate || false;
 
@@ -57,10 +56,10 @@ export const AnimatePresence: React.FC<
     animatingKeys: new Set<string>(),
   }));
 
+  console.log('store',store);
+
   const rerender = () => setStore((p) => ({ ...p }));
   store.renderedChildKeys.clear();
-
-  console.log('ANIMATING KEYS', Array.from(store.animatingKeys));
 
   // @ts-expect-error
   const childrenArr: React.ReactElement[] =
@@ -78,12 +77,20 @@ export const AnimatePresence: React.FC<
         }
 
         const isAnimatingExit = store.animatingKeys.has(child.key);
-        if (!isAnimatingExit) {
-          store.contextByKey.delete(child.key);
-          store.exitedIndexes.push(context.index);
-          store.exitedIndexes.sort();
-          rerender()
+        if (isAnimatingExit) {
+          return;
         }
+
+        const shouldRerender = store.contextByKey.has(child.key);
+        if (!shouldRerender) {
+          return;
+        }
+
+        store.contextByKey.delete(child.key);
+        store.enteredKeys.delete(child.key);
+        store.exitedIndexes.push(context.index);
+        store.exitedIndexes.sort();
+        rerender()
       }
 
       const context : AnimatePresenceContextValue = {
@@ -92,15 +99,16 @@ export const AnimatePresence: React.FC<
         index: index,
         isLast: isLast,
         element: child,
-        get entered() {
-          const hasEntered = store.enteredKeys.has(child.key);
-          return hasEntered;
-        },
         get entering()  {
           const isPresent = context.isPresent;
           const isAnimatingEnter = store.animatingKeys.has(child.key);
           const hasEntered = context.entered;
-          return isPresent && (isAnimatingEnter) && !hasEntered;
+          const isEntering = isPresent && (isAnimatingEnter) && !hasEntered;
+          return isEntering;
+        },
+        get entered() {
+          const hasEntered = store.enteredKeys.has(child.key);
+          return hasEntered;
         },
         get isPresent() {
           if (propagate && !parentPresence?.isPresent) {
@@ -113,14 +121,15 @@ export const AnimatePresence: React.FC<
 
         lifecycle: {
           onRender() {
-            if (context.isPresent) {
-              // If the component is not animating, we can delete it
-              Promise.resolve().then(() => {
+            // If the component is not animating, we can delete it
+            Promise.resolve().then(() => {
+              if (context.isPresent) {
                 removeExitingChild();
-              })
-            }
+              }
+            })
           },
           onAnimationStart() {
+            store.enteredKeys.add(child.key);
             store.animatingKeys.add(child.key);
           },
           onAnimationEnd() {
@@ -157,9 +166,7 @@ export const AnimatePresence: React.FC<
     const childStillInTree = store.renderedChildKeys.has(childKey);
     if (childStillInTree) return;
 
-    console.log('EXITING ELEMENT', childKey);
     exitingChildrenKeys.add(childKey);
-
 
     const animatedExitingElement = (
       <AnimatePresenceContext.Provider 
@@ -181,9 +188,7 @@ export const AnimatePresence: React.FC<
   });
 
   const hasExitingElements = exitingChildrenKeys.size > 0;
-  console.log('hasExitingElements', Array.from(exitingChildrenKeys));
   if (!hasExitingElements) {
-    console.log('SETUP keysBeforeExit', Array.from(store.renderedChildKeys));
     // we can keep track of all renderedChildKeys
     store.keysBeforeExit = new Set(Array.from(store.renderedChildKeys));
   } else {
@@ -194,13 +199,11 @@ export const AnimatePresence: React.FC<
 
       // We only apply the exitBeforeEnter feature if mode === 'wait'
       if (mode === "wait" && !isPresentBeforeAnyExit) {
-        console.log('REMOVED', child.key);
         children[index] = <></>;
       }
     });
   }
   
-  console.log('ANIMATE PRESENCE AFTER');
   store.isInitial = false;
   store.exitedIndexes = [];
   return children;

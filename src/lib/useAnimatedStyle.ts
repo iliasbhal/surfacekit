@@ -104,6 +104,7 @@ export const useAnimatedStylesheet = (
       });
     });
   };
+  
 
   React.useEffect(() => {
     Array.from(state.animationEffects.values()).forEach((effect) => {

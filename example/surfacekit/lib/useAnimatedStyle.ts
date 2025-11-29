@@ -1,12 +1,15 @@
 import React from "react";
 import { StandardProperties } from "csstype";
 import { StyleSheet } from "react-native";
-import { Keyframe, SharedValue, useAnimatedStyle, withDelay } from "react-native-reanimated";
-import { scheduleOnRN } from "react-native-worklets";
+import { AnimatedRef, Keyframe, SharedValue, useAnimatedStyle, useSharedValue, withDelay, withTiming } from "react-native-reanimated";
+import { measure } from 'react-native-reanimated';
+import { runOnUI, scheduleOnRN, scheduleOnUI } from "react-native-worklets";
 import * as DefaultAnimations from "./defaultAnimations";
 import { useDynamicSharedValues } from "./useDynamicSharedValues";
 import { AnimatePresenceContextValue } from "../AnimatePresence";
 import { createControlledPromise } from "./ControlledPromise";
+import { replacePart } from "expo-router/build/fork/getStateFromPath-forks";
+import { useIsRenderFromOutside } from "./useIsRenderFromOutside";
 
 const defaultTransforms: Record<string, any> = {
   rotate: "0deg",
@@ -52,8 +55,10 @@ const styleDefaults = {
 } as const;
 
 export const useAnimatedStylesheet = (
+  compRef: AnimatedRef<any>,
   componentProps: any,
   presence: AnimatePresenceContextValue,
+  originalProps: any,
 ) => {
   const [state] = React.useState(() => ({
     pendingTransitions: [] as Promise<any>[],
@@ -77,10 +82,8 @@ export const useAnimatedStylesheet = (
   // console.log('compiledStyle',componentProps.debugId, compiledStyle);
 
   const animateProperty = (key: string, initial: any, next: any) => {
-    console.log('animate property', key, initial, next);
     remainingAnimatedProperties.delete(key);
     sharedValues.init(key, initial);
-
     state.animationEffects.set(key, () => {
       const isAnimating = state.pendingTransitions.length > 0;
       if (!isAnimating) {
@@ -106,10 +109,9 @@ export const useAnimatedStylesheet = (
     });
   };
 
-  React.useEffect(() => {
-    Array.from(state.animationEffects.values()).forEach((effect) => {
-      effect();
-    });
+  React.useLayoutEffect(() => {
+    Array.from(state.animationEffects.values())
+      .forEach((startAnimation) => startAnimation());
 
     state.animationEffects.clear();
   });
@@ -162,38 +164,32 @@ export const useAnimatedStylesheet = (
     }
   });
 
-  console.log('sortedProps', sortedProps)
-
-
 
   // // Create Animated Style
   const styles : Record<string, SharedValue> = {};
   sharedValues.forEach((propName, sharedValue) => {
-    console.log('SHARED VALUES', propName);
     styles[propName] = sharedValue;
   });
 
-
-  // // Create Animated Style
   const animatedStyle = useAnimatedStyle(() => {
     const style = {} as Record<string, any>;
 
     for (const key in styles) {
       const sharedValue = styles[key];
       const isTransform = key in defaultTransforms;
-      if (isTransform) {
-        if (!style.transform) {
-          style.transform = [];
-        }
-        return style.transform.push({
-          [key]: sharedValue.value,
-        });
+      if (!isTransform) {
+        style[key] = sharedValue.value;
+      }
+      
+      if (!style.transform) {
+        style.transform = [];
       }
 
-      style[key] = sharedValue.value;
+      style.transform.push({
+        [key]: sharedValue.value,
+      });
     }
 
-    console.log('animatedStyle', { style, styles, sharedValues });
     return style;
   });
 
@@ -263,3 +259,4 @@ export const DEFAULT_TRANSFORM_STYLE = StyleSheet.create<any>({
     transform: defaultTransformStyle,
   },
 }).base;
+
