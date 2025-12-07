@@ -81,6 +81,7 @@ export const useComponentOverrides = (props: any) => {
           return isFirstRender;
         },
         get exiting() {
+          if (!presence) return false;
           const isExiting = !presence?.isPresent;
           return isExiting;
         },

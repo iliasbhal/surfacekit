@@ -1,16 +1,14 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { View, Text } from '@/uikit';
-import {  measure, useAnimatedRef } from 'react-native-reanimated';
+import {  measure } from 'react-native-reanimated';
 import { Gesture } from 'react-native-gesture-handler';
-import { AnimatePresence } from '@/surfacekit';
-import { opacity } from 'react-native-reanimated/lib/typescript/Colors';
-import { LayoutChangeEvent } from 'react-native';
 
 type MeasuredDimensions = Exclude<Partial<ReturnType<typeof measure>>, null> & Partial<{ translateX: number, translateY: number }>
 
 export default function ModalScreen() {
-  const [ items, setItems ] = React.useState([0,1,2]);
-  const [ count, setCount ] = React.useState(1);
+  const [ items, setItems ] = React.useState([0,1]);
+  const [ count, setCount ] = React.useState(2);
+  const [toggle, setToggle] = React.useState(false);
 
   return (
     <View
@@ -24,94 +22,46 @@ export default function ModalScreen() {
       alignItems="center"
       gesture={Gesture.Tap().runOnJS(true).onBegin(() => {
         setCount((prev) => {
-          const possibleValues = [1, 2,3,4,5].filter(i => i !== prev);
+          const possibleValues = [1,2,].filter(i => i !== prev);
           const next = possibleValues[Math.floor(Math.random() * possibleValues.length)];
           return next;
         });
 
-        setItems(() => {
-          return Array.from({ length: 3 }).map((_, i) => i).sort(() => Math.random() - 0.5);
-        })
+        setItems((prev) => {
+          while (true) {
+            const next = Array.from({ length: 3 }).map((_, i) => i).sort(() => Math.random() - 0.5)
+            const hasChanged = JSON.stringify(prev) !== JSON.stringify(next);
+            if (hasChanged) return next;
+          }
+        });
+
+        setToggle((p) => !p)
       })}
     >
       <LayoutPlayground count={count} />
+      <LayoutPlayground2 count={count} />
       <ReOrderPlayground items={items} />
-      <TogglePlayground count={count} />
+      <TogglePlayground active={toggle} />
     </View>
   );
 }
 
-const useTrackLayout = () => {
-  const [targetMeasure, setTargetMeasure] = React.useState<MeasuredDimensions | null>({})
-  const trackRef = useAnimatedRef<any>();
-  const applyRef = useAnimatedRef<any>();
-  const translateXRef = React.useRef<number[]>([]);
-  const translateYRef = React.useRef<number[]>([]);
-  const measureRef = React.useRef<MeasuredDimensions | null>({});
-  const onLayout =   () => {
-    const trackMeasure = measure(trackRef)!;
-    const applyMeasure = measure(applyRef)!;
-
-    const canCompute = trackMeasure && applyMeasure;
-    if (!canCompute) return;
-
-    const anchorChangedSize = measureRef.current?.width !== trackMeasure.width 
-      || measureRef.current?.height !== trackMeasure.height;
-
-    const anchorMovedX = measureRef.current?.pageX !== trackMeasure.pageX
-    const anchorMovedY =  measureRef.current?.pageY !== trackMeasure.pageY;
-    const anchorMoved = anchorMovedX || anchorMovedY;
-    const hasLayoutChanged = anchorChangedSize || anchorMoved;
-    
-    if (!hasLayoutChanged) return;
-    measureRef.current = trackMeasure;
-
-    const xDiff = trackMeasure.pageX - applyMeasure.pageX;
-    translateXRef.current.push(xDiff);
-    const allTranslateX = translateXRef.current.reduce((acc, curr) => acc + curr, 0);
-    translateXRef.current = [allTranslateX]
-    
-    const yDiff = trackMeasure.pageY - applyMeasure.pageY;
-    translateYRef.current.push(yDiff);
-    const allTranslateY = translateYRef.current.reduce((acc, curr) => acc + curr, 0);
-    translateYRef.current = [allTranslateY]
-
-    setTargetMeasure({
-      width: trackMeasure.width,
-      height: trackMeasure.height,
-      pageX: trackMeasure.pageX,
-      pageY: trackMeasure.pageY,
-      translateX: allTranslateX,
-      translateY: allTranslateY,
-    });
-  }
-  
-  React.useLayoutEffect(onLayout);
-
-  return {
-    trackRef,
-    applyRef,
-    onTrackLayout: onLayout,
-    targetMeasure,
-  }
-}
-
-const TogglePlayground : React.FC<{ count: number }> = (props) => {
-  
-  const isEven = props.count % 2 === 0;
-
+const TogglePlayground : React.FC<{ active: boolean }> = (props) => {
   return  (
-    <View display='flex' flexDirection='column' flex={1}>
-      <View display="flex" flexDirection='row' justifyContent={isEven ? 'flex-start' : 'flex-end'} width={200}  backgroundColor='red'>
-        <AnimatePosition key="toggle">
+    <View display='flex' flexDirection='column' flex={1} itemsCenter justifyCenter>
+      <View backgroundColor='red' width={120} padding={10}>
+        <View display="flex" flexDirection='row' justifyContent={props.active ? 'flex-start' : 'flex-end'} width={100}>
           <View 
+            // key={props.active ? "toggle" : "toggle-inactive"}
             width={50}
             height={50}
-            margin={10}
-            opacity={1}
-            backgroundColor="white"
+            aaa={props}
+            backgroundColor={"white"}
+            transition={{
+              position: true,
+            }}
           />
-        </AnimatePosition>
+        </View>
       </View>
     </View>
   )
@@ -119,21 +69,12 @@ const TogglePlayground : React.FC<{ count: number }> = (props) => {
 
 
 const ReOrderPlayground : React.FC<{ items: number[] }> = (props) => {
-  const layout : any = {};
-  props.items.forEach((i) => {
-    layout[i] = useTrackLayout();
-  });
-
   return (
     <View display='flex' flexDirection='column' flex={1}>
       <View
         display="flex"
         flexDirection="column"
         backgroundColor='green'
-        paddingTop={props.items[0] * 50}
-        transition={{
-          paddingTop: true,
-        }}
       >
 
         <View
@@ -144,15 +85,27 @@ const ReOrderPlayground : React.FC<{ items: number[] }> = (props) => {
           relative
           p={10}
           gap={10}
+          height={200 + (props.items[0] * 50)}
+          transition={{
+            height: true,
+          }}
+          // height={200}
+          flexWrap
           opacity={1}
           // opacity={.1}
           >
           {props.items.map((number) => (
-            <AnimatePosition key={number}>
-              <View width={50} height={50 + (number * 50)} backgroundColor="blue" opacity={.4}>
-                <Text fontFamily='Inter.Bold' fontSize={20} color="white">{number}</Text>
-              </View>
-            </AnimatePosition>
+            <View
+              key={number}
+              width={50}
+              height={50 + (number * 50)} 
+              backgroundColor="blue"
+              transition={{ 
+                position: true,
+              }}
+            >
+              <Text fontFamily='Inter.Bold' fontSize={20} color="white">{number}</Text>
+            </View>
           ))}
         </View>
       </View>
@@ -162,158 +115,116 @@ const ReOrderPlayground : React.FC<{ items: number[] }> = (props) => {
 
 
 const LayoutPlayground : React.FC<{ count: number }> = (props) => {
+
+  const [remove, setRemove] = React.useState([]);
+  const [order, setOrder] = React.useState<number[]>([1,2,3,4,5,6,7]);
+
   return (
-    <View display='flex' flexDirection='column' flex={1}>
-      <AnimateLayout>
-        <View display='flex' flexDirection='column'>
-          <AnimatePresence mode='sync' >
-            {Array.from({ length: props.count }).map((_, i) => (
-              <View
-                key={i}
-                backgroundColor="blue"
-                width={100}
-                height={100}
-                justifyCenter
-                itemsCenter
-                // onLayout={onLayout}
-                transition={{ 
-                  opacity: true,
-                  // transform: true, 
-                  height: true,
-                }}
-                
-                overrides={(state) => [
-                  state.initial && { opacity: 0 },
-                  state.entered && { opacity: 1 },
-                  state.exiting && { opacity: 0, height: 0 },
-                ]}
-              >
-                <Text fontFamily='Inter.ExtraBold' fontSize={33} color="white">{i}</Text>
-              </View>
-            ))}
-          </AnimatePresence>
-        </View>
-      </AnimateLayout>
+    <View display='flex' flexDirection='column' flex={1} itemsCenter
+      gesture={Gesture.Tap().runOnJS(true).onBegin(() => {
+        const next= Array.from({ length: 7 })
+        .map((_, i) => i + 1)
+        .sort((i) => {
+          return Math.random() > 0.5 ? 1 : -1;
+        });
+        setOrder(next);
+      })}
+    >
+      <View
+        debugId="debug"
+        display='flex'
+        flexDirection='column'
+        backgroundColor="green"
+        width={100}
+        padding="size4"
+        transition={{ 
+          height: true,
+          width: true,
+          children: true,
+        }}
+      >
+        {order.map((i) => (
+          remove.indexOf(i) === -1 && <View
+            key={i}
+            debugId={`debug-${i}`}
+            width={'100%'}
+            height={100}
+            backgroundColor="blue"
+            // opacity={i == 1 ? 1 : 0}
+            overflowVisible
+            justifyCenter
+            itemsCenter
+            transition={{ 
+              opacity: true,
+              position: true,
+            }}
+            gesture={Gesture.Tap().runOnJS(true).onBegin(() => {
+              setRemove((prev) => [...prev, i]);
+            })}            
+            overrides={(state) => {
+              return [
+                // state.initial && { opacity: 1 },
+                state.exiting && { opacity: 0, detach: true },
+              ];
+            }}
+          >
+              <Text fontFamily='Inter.ExtraBold' fontSize={33} color="white">{i}</Text>
+          </View>
+        ))}
+      </View>
     </View>
   )
 }
 
-const AnimatePosition : React.FC<React.PropsWithChildren> = (props) => {
-  const layout = useTrackLayout();
-  
-  const [size, setSize] = React.useState<{ width: number, height: number }|null>(null);
-  React.useLayoutEffect(() => {
-    const nodeRect = measure(layout.trackRef)!;
-    setSize({
-      width: nodeRect.width,
-      height: nodeRect.height,
-    });
-  }, []);
 
-  console.log('size',size);
-  const onLayout = (event: { nativeEvent: { layout: any } }) => {
-    const nextSize = {
-      width: event.nativeEvent.layout.width,
-      height: event.nativeEvent.layout.height,
-    };
 
-    if (!size) {
-      return setSize(nextSize);
-    }
-
-    const hasChanged = size.height !== nextSize.height 
-      || size.width !== nextSize.width;
-
-    if (hasChanged) {
-      return setSize(nextSize);
-    }
-  }
-
-  if (!size) {
-    return (
-      <React.Fragment>
-        <View
-          key={"track"}
-          ref={layout.applyRef}
-          opacity={0}
-          absolute
-          top={0}
-          left={0}
-          zIndex={1000}
-          backgroundColor="black"
-        />
-        <View
-          key={"apply"}
-          ref={layout.trackRef}
-          onLayout={onLayout}
-          translateX={0}
-          translateY={0}
-          transition={{ 
-            translateY: true,
-            translateX: true,
-          }}
-        >
-          {props.children}
-        </View>
-      </React.Fragment>
-    )
-  }
+const LayoutPlayground2 : React.FC<{ count: number }> = (props) => {
 
   return (
-    <React.Fragment>
+    <View display='flex' flexDirection='column' flex={1} itemsCenter>
       <View
-        key={"track"}
-        ref={layout.trackRef}
-        onLayout={layout.onTrackLayout}
-        opacity={0.5}
-        relative
-        backgroundColor="black"
-        zIndex={1000}
-
-        {...size}
-      />
-      <View
-        key={"apply2"}
-        ref={layout.applyRef}
-        onLayout={onLayout}
-        opacity={1}
-        absolute
-        top={0}
-        left={0}
-        translateX={layout.targetMeasure?.translateX}
-        translateY={layout.targetMeasure?.translateY}
+        debugId="debug"
+        display='flex'
+        flexDirection='column'
+        backgroundColor="green"
+        width={100}
+        gap="size4"
+        padding="size4"
         transition={{ 
-          translateY: true,
-          translateX: true,
+          height: true,
+          width: true,
+          children: true,
         }}
       >
-        {props.children}
-      </View>
-    </React.Fragment>
-  )
-}
-
-const AnimateLayout : React.FC<React.PropsWithChildren> = (props) => {
-  const trackLayout = useTrackLayout();
-
-  return (
-    <View
-      ref={trackLayout.applyRef}
-      width={trackLayout.targetMeasure?.width}
-      height={trackLayout.targetMeasure?.height}
-      overflowHidden
-      relative
-      transition={{ 
-        height: true,
-        width: true,
-      }}
-    >
-      <View
-        absolute
-        ref={trackLayout.trackRef}
-        onLayout={trackLayout.onTrackLayout}
-      >
-        {props.children}
+        {Array.from({ length: props.count }).map((_, i) => (
+          <View
+            key={i}
+            debugId={`debug-${i}`}
+            width="100%"
+            transition={{ 
+              opacity: true,
+              position: true,
+            }}            
+            overrides={(state) => {
+              return [
+                // state.initial && { opacity: 1 },
+                state.exiting && { opacity: 0, detach: true },
+              ];
+            }}
+          >
+            <View
+              width={'100%'}
+              height={100}
+              overflowVisible
+              justifyCenter
+              itemsCenter
+              
+              backgroundColor="blue"
+            >
+              <Text fontFamily='Inter.ExtraBold' fontSize={33} color="white">{i}</Text>
+            </View>
+          </View>
+        ))}
       </View>
     </View>
   )

@@ -17,8 +17,6 @@ const transform = (style: any, config: any) => {
 };
 
 export const createViewBase = <T extends SurfaceTheme>(rawTheme: T) => {
-
-  console.log('CREATE VIEW BASE')
   const attrs = {
     any: attribute
   };

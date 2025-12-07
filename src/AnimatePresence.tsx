@@ -37,7 +37,6 @@ interface AnimatePresenceProps {
 export const AnimatePresence: React.FC<
   React.PropsWithChildren<AnimatePresenceProps>
 > = (props) => {
-  console.log('ANIMATE PRESENCE ENTER');
   const mode = props.mode || "sync";
   const propagate = props.propagate || false;
 
@@ -60,7 +59,6 @@ export const AnimatePresence: React.FC<
   const rerender = () => setStore((p) => ({ ...p }));
   store.renderedChildKeys.clear();
 
-  console.log('ANIMATING KEYS', Array.from(store.animatingKeys));
 
   // @ts-expect-error
   const childrenArr: React.ReactElement[] =
@@ -138,7 +136,10 @@ export const AnimatePresence: React.FC<
       store.contextByKey.set(child.key, context);
 
       return (
-        <AnimatePresenceContext.Provider key={child.key} value={{ ...context }}>
+        <AnimatePresenceContext.Provider 
+          key={child.key}
+          value={{ ...context }}
+        >
           {child}
         </AnimatePresenceContext.Provider>
       );
@@ -157,14 +158,17 @@ export const AnimatePresence: React.FC<
     const childStillInTree = store.renderedChildKeys.has(childKey);
     if (childStillInTree) return;
 
-    console.log('EXITING ELEMENT', childKey);
     exitingChildrenKeys.add(childKey);
+
+    const nextcontext = {
+      ...context,
+    }
 
 
     const animatedExitingElement = (
       <AnimatePresenceContext.Provider 
         key={childKey}
-        value={{ ...context }}
+        value={nextcontext}
       >
         {child}
       </AnimatePresenceContext.Provider>
@@ -181,9 +185,7 @@ export const AnimatePresence: React.FC<
   });
 
   const hasExitingElements = exitingChildrenKeys.size > 0;
-  console.log('hasExitingElements', Array.from(exitingChildrenKeys));
   if (!hasExitingElements) {
-    console.log('SETUP keysBeforeExit', Array.from(store.renderedChildKeys));
     // we can keep track of all renderedChildKeys
     store.keysBeforeExit = new Set(Array.from(store.renderedChildKeys));
   } else {
@@ -194,13 +196,11 @@ export const AnimatePresence: React.FC<
 
       // We only apply the exitBeforeEnter feature if mode === 'wait'
       if (mode === "wait" && !isPresentBeforeAnyExit) {
-        console.log('REMOVED', child.key);
         children[index] = <></>;
       }
     });
   }
   
-  console.log('ANIMATE PRESENCE AFTER');
   store.isInitial = false;
   store.exitedIndexes = [];
   return children;
