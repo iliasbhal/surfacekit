@@ -9,3 +9,12 @@ export const Natural = (value: number, callback?: () => void) => withTiming(
     },
     callback,
   );
+
+
+export const animateToValue = (value: number, config: any,callback?: () => void) => {
+  if (typeof config === 'boolean') {
+    return Natural(value, callback);
+  }
+
+  return Natural(value, callback);
+}

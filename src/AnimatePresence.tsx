@@ -1,4 +1,5 @@
 import React from "react";
+import { AnimatedRef } from "react-native-reanimated";
 
 export const ANIMATE_PRESENCE_PROPS_KEY = "__AnimatePresenceProps__";
 
@@ -11,6 +12,7 @@ export interface AnimatePresenceContextValue {
   isPresent: boolean;
   entering: boolean;
   element: React.ReactElement;
+  presenceRef?: AnimatedRef<any>;
   lifecycle: {
     onRender: () => void;
     onAnimationStart: () => void;
@@ -30,6 +32,7 @@ export const AnimatePresenceContext =
   React.createContext<AnimatePresenceContextValue>(null!);
 
 interface AnimatePresenceProps {
+  parentRef?: AnimatedRef<any>;
   propagate?: boolean;
   mode?: "sync" | "wait";
 }
@@ -39,6 +42,7 @@ export const AnimatePresence: React.FC<
 > = (props) => {
   const mode = props.mode || "sync";
   const propagate = props.propagate || false;
+
 
   const parentPresence = React.useContext(AnimatePresenceContext);
 
@@ -59,7 +63,6 @@ export const AnimatePresence: React.FC<
   const rerender = () => setStore((p) => ({ ...p }));
   store.renderedChildKeys.clear();
 
-
   // @ts-expect-error
   const childrenArr: React.ReactElement[] =
   // @ts-expect-error
@@ -76,12 +79,20 @@ export const AnimatePresence: React.FC<
         }
 
         const isAnimatingExit = store.animatingKeys.has(child.key);
-        if (!isAnimatingExit) {
-          store.contextByKey.delete(child.key);
-          store.exitedIndexes.push(context.index);
-          store.exitedIndexes.sort();
-          rerender()
+        if (isAnimatingExit) {
+          return;
         }
+
+        const shouldRerender = store.contextByKey.has(child.key);
+        if (!shouldRerender) {
+          return;
+        }
+
+        store.contextByKey.delete(child.key);
+        store.enteredKeys.delete(child.key);
+        store.exitedIndexes.push(context.index);
+        store.exitedIndexes.sort();
+        rerender()
       }
 
       const context : AnimatePresenceContextValue = {
@@ -90,15 +101,19 @@ export const AnimatePresence: React.FC<
         index: index,
         isLast: isLast,
         element: child,
-        get entered() {
-          const hasEntered = store.enteredKeys.has(child.key);
-          return hasEntered;
+        get presenceRef() {
+          return props.parentRef;
         },
         get entering()  {
           const isPresent = context.isPresent;
           const isAnimatingEnter = store.animatingKeys.has(child.key);
           const hasEntered = context.entered;
-          return isPresent && (isAnimatingEnter) && !hasEntered;
+          const isEntering = isPresent && (isAnimatingEnter) && !hasEntered;
+          return isEntering;
+        },
+        get entered() {
+          const hasEntered = store.enteredKeys.has(child.key);
+          return hasEntered;
         },
         get isPresent() {
           if (propagate && !parentPresence?.isPresent) {
@@ -111,14 +126,16 @@ export const AnimatePresence: React.FC<
 
         lifecycle: {
           onRender() {
-            if (context.isPresent) {
-              // If the component is not animating, we can delete it
-              Promise.resolve().then(() => {
+            // If the component is not animating, we can delete it
+            Promise.resolve().then(() => {
+              if (context.isPresent) {
+
                 removeExitingChild();
-              })
-            }
+              }
+            })
           },
           onAnimationStart() {
+            store.enteredKeys.add(child.key);
             store.animatingKeys.add(child.key);
           },
           onAnimationEnd() {
@@ -134,10 +151,11 @@ export const AnimatePresence: React.FC<
 
       store.renderedChildKeys.add(child.key);
       store.contextByKey.set(child.key, context);
+      const childKey = child.key as string;
 
       return (
-        <AnimatePresenceContext.Provider 
-          key={child.key}
+        <AnimatePresenceContext.Provider
+          key={childKey}
           value={{ ...context }}
         >
           {child}
@@ -148,6 +166,7 @@ export const AnimatePresence: React.FC<
   const exitingChildrenKeys = new Set<string>();
   store.contextByKey.forEach((context) => {
     const child = context.element;
+    
     // If the component is rendered above, it means that it's no longer
     // in an exiting state. The component was rendered back in the tree
     // before the exit animation ended or even started;
@@ -160,15 +179,11 @@ export const AnimatePresence: React.FC<
 
     exitingChildrenKeys.add(childKey);
 
-    const nextcontext = {
-      ...context,
-    }
-
 
     const animatedExitingElement = (
       <AnimatePresenceContext.Provider 
         key={childKey}
-        value={nextcontext}
+        value={{ ...context }}
       >
         {child}
       </AnimatePresenceContext.Provider>

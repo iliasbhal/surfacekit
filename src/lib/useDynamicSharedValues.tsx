@@ -23,10 +23,6 @@ export function useDynamicSharedValues() {
     };
   }, []);
 
-  React.useEffect(() => {
-
-  })
-
   const order: string[] = [];
 
   return {
@@ -35,6 +31,7 @@ export function useDynamicSharedValues() {
       return ref[name].shared?.value;
     },
     has: (name: string) => {
+      // if (!ref[name]) return false;
       return ref[name].shared !== undefined;
     },
     target(name: string, next: any) {
@@ -46,6 +43,7 @@ export function useDynamicSharedValues() {
     },
     init: (name: string, initial: any) => {
       order.push(name);
+
       if (ref[name]?.shared) return false;
       // console.log('styleProp - init', name, initial);
       ref[name] = {
@@ -57,6 +55,7 @@ export function useDynamicSharedValues() {
 
       return true;
     },
+
     set: (name: string, next: any) => {
       // console.log('ref', name, next, ref);
       if (!ref[name].shared) return;

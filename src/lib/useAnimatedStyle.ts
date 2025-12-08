@@ -1,12 +1,16 @@
 import React from "react";
 import { StandardProperties } from "csstype";
 import { StyleSheet } from "react-native";
-import { Keyframe, SharedValue, useAnimatedStyle, withDelay } from "react-native-reanimated";
-import { scheduleOnRN } from "react-native-worklets";
-import * as DefaultAnimations from "./defaultAnimations";
+import { AnimatedRef, Keyframe, SharedValue, useAnimatedStyle, useSharedValue, withDelay, withTiming } from "react-native-reanimated";
+import { measure } from 'react-native-reanimated';
+import { runOnUI, scheduleOnRN, scheduleOnUI } from "react-native-worklets";
+import { animateToValue } from "./defaultAnimations";
 import { useDynamicSharedValues } from "./useDynamicSharedValues";
 import { AnimatePresenceContextValue } from "../AnimatePresence";
 import { createControlledPromise } from "./ControlledPromise";
+import { replacePart } from "expo-router/build/fork/getStateFromPath-forks";
+import { useIsRenderFromOutside } from "./useIsRenderFromOutside";
+import { PropsFilter } from "react-native-reanimated/lib/typescript/createAnimatedComponent/PropsFilter";
 
 const defaultTransforms: Record<string, any> = {
   rotate: "0deg",
@@ -52,8 +56,10 @@ const styleDefaults = {
 } as const;
 
 export const useAnimatedStylesheet = (
+  compRef: AnimatedRef<any>,
   componentProps: any,
   presence: AnimatePresenceContextValue,
+  originalProps: any,
 ) => {
   const [state] = React.useState(() => ({
     pendingTransitions: [] as Promise<any>[],
@@ -74,25 +80,24 @@ export const useAnimatedStylesheet = (
   const remainingAnimatedProperties = new Set(animationKeys);
   const compiledStyle = Object.assign({}, ...styleProp);
 
-  // console.log('compiledStyle',componentProps.debugId, compiledStyle);
 
   const animateProperty = (key: string, initial: any, next: any) => {
     remainingAnimatedProperties.delete(key);
     sharedValues.init(key, initial);
-
     state.animationEffects.set(key, () => {
       const isAnimating = state.pendingTransitions.length > 0;
       if (!isAnimating) {
         presence?.lifecycle?.onAnimationStart?.();
       }
       
-      // console.log('PRESENCE -- start animation', componentProps.debugId, key, next, Array.from(state.pendingTransitions));
       const promiseCtl = createControlledPromise()
+      const transitionConfig = transition[key];
       const delay = compiledStyle.transitionDelay || 0;
-      sharedValues.set(key, withDelay(delay, DefaultAnimations.Natural(next, () => {
+      const callback = () => {
         scheduleOnRN(() => promiseCtl.complete());
-      })));
-  
+      };
+
+      sharedValues.set(key, animateToValue(next, transitionConfig, callback));
   
       state.pendingTransitions.push(promiseCtl.promise);
       const totalAnimationsCount = state.pendingTransitions.length;
@@ -104,12 +109,10 @@ export const useAnimatedStylesheet = (
       });
     });
   };
-  
 
-  React.useEffect(() => {
-    Array.from(state.animationEffects.values()).forEach((effect) => {
-      effect();
-    });
+  React.useLayoutEffect(() => {
+    Array.from(state.animationEffects.values())
+      .forEach((startAnimation) => startAnimation());
 
     state.animationEffects.clear();
   });
@@ -138,7 +141,10 @@ export const useAnimatedStylesheet = (
 
 
   // Sort animated properties to ensure scale comes after translate
-  const sortedProps = Array.from(remainingAnimatedProperties).sort((a, b) => {
+  // is animated but not defined anymroe in styles
+  // So we should animate it back to it's initial value
+  // Note: we cannot animate width and height here because there is no default value
+  Array.from(remainingAnimatedProperties).sort((a, b) => {
     const isScaleA = a.includes("scale");
     const isScaleB = b.includes("scale");
     const isTranslateA = a.includes("translate");
@@ -147,21 +153,13 @@ export const useAnimatedStylesheet = (
     if (isScaleA && isTranslateB) return 1;
     if (isTranslateA && isScaleB) return -1;
     return 0;
-  });
-
-  // is animated but not defined anymroe in styles
-  // So we should animate it back to it's initial value
-  // Note: we cannot animate width and height here because there is no default value
-  // console.log('styleProp - animatedProperties', animatedProperties);
-  sortedProps.forEach((prop: any) => {
+  }).forEach((prop: any) => {
     // @ts-expect-error
     const initial = defaultTransforms[prop] ?? styleDefaults[prop];
-    // console.log('styleProp - ANIMETED -', prop, initial);
     if (initial !== undefined) {
       animateProperty(prop, initial, initial);
     }
   });
-
 
 
   // // Create Animated Style
@@ -170,24 +168,23 @@ export const useAnimatedStylesheet = (
     styles[propName] = sharedValue;
   });
 
-
-  // // Create Animated Style
   const animatedStyle = useAnimatedStyle(() => {
     const style = {} as Record<string, any>;
 
     for (const key in styles) {
       const sharedValue = styles[key];
       const isTransform = key in defaultTransforms;
-      if (isTransform) {
-        if (!style.transform) {
-          style.transform = [];
-        }
-        return style.transform.push({
-          [key]: sharedValue.value,
-        });
+      if (!isTransform) {
+        style[key] = sharedValue.value;
+      }
+      
+      if (!style.transform) {
+        style.transform = [];
       }
 
-      style[key] = sharedValue.value;
+      style.transform.push({
+        [key]: sharedValue.value,
+      });
     }
 
     return style;
@@ -195,6 +192,33 @@ export const useAnimatedStylesheet = (
 
   
   styleProp.push(animatedStyle);
+
+  if (presence?.presenceRef) {
+    const [detachStyle, setDetachStyle] = React.useState<any>(null);
+    React.useLayoutEffect(() => {
+      if (detachStyle) return;
+      if (!componentProps.detach) return;
+
+      const wrapperRef = measure(presence.presenceRef!);
+      const currentRect = measure(compRef!);
+
+
+      const distanceX = currentRect?.pageX - wrapperRef?.pageX;
+      const distanceY = currentRect?.pageY - wrapperRef?.pageY;
+      setDetachStyle({
+        distanceX: distanceX ?? 0,
+        distanceY: distanceY ?? 0,
+      }); 
+    });
+
+    if (componentProps.detach && detachStyle) {
+      styleProp.push({
+        position: 'absolute',
+        top: detachStyle.distanceY,
+        left: detachStyle.distanceX,
+      });
+    }
+  }
 
 
 
@@ -221,7 +245,6 @@ export const useAnimatedStylesheet = (
   //     //   )
   //     // )
 
-  //     console.log('USE ANIMATION', animation, defintions);
   //     // componentProps.style.push({
   //     //   animationName: animation.keyframes,
   //     //   animationDuration: animation.duration || '300ms',
@@ -259,3 +282,4 @@ export const DEFAULT_TRANSFORM_STYLE = StyleSheet.create<any>({
     transform: defaultTransformStyle,
   },
 }).base;
+

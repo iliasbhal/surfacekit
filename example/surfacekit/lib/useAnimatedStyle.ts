@@ -4,7 +4,7 @@ import { StyleSheet } from "react-native";
 import { AnimatedRef, Keyframe, SharedValue, useAnimatedStyle, useSharedValue, withDelay, withTiming } from "react-native-reanimated";
 import { measure } from 'react-native-reanimated';
 import { runOnUI, scheduleOnRN, scheduleOnUI } from "react-native-worklets";
-import * as DefaultAnimations from "./defaultAnimations";
+import { animateToValue } from "./defaultAnimations";
 import { useDynamicSharedValues } from "./useDynamicSharedValues";
 import { AnimatePresenceContextValue } from "../AnimatePresence";
 import { createControlledPromise } from "./ControlledPromise";
@@ -91,11 +91,13 @@ export const useAnimatedStylesheet = (
       }
       
       const promiseCtl = createControlledPromise()
+      const transitionConfig = transition[key];
       const delay = compiledStyle.transitionDelay || 0;
-      sharedValues.set(key, DefaultAnimations.Natural(next, () => {
+      const callback = () => {
         scheduleOnRN(() => promiseCtl.complete());
-      }));
-  
+      };
+
+      sharedValues.set(key, animateToValue(next, transitionConfig, callback));
   
       state.pendingTransitions.push(promiseCtl.promise);
       const totalAnimationsCount = state.pendingTransitions.length;

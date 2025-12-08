@@ -710,7 +710,7 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
 
           presence?.lifecycle?.onRender?.();
 
-          const isPositionAnimated = props.transition?.['position'];
+          const isPositionAnimated = !!props.transition?.['position'];
           const isHeightTransition = !props.height && props.transition?.['height']; // is height is specified, then we shouldn't add a size Transition
           const isWidthTransition = !props.width && props.transition?.['width'];
           const isAnimatingSize = isHeightTransition || isWidthTransition;
@@ -762,6 +762,7 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
                 debugId={props.debugId}
                 View={BaseView}
                 children={p.children}
+                transition={props.transition?.['position']}
               />
             )),
             componentProps.gesture && ((props) => (

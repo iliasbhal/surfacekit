@@ -1,12 +1,13 @@
 import { useFonts as useExpoFonts } from "expo-font";
 import React, { JSXElementConstructor, PropsWithChildren } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text as RNText, View as RNView } from "react-native";
 import { GestureDetector, GestureType } from "react-native-gesture-handler";
 import {
   AnimatedProps,
   BaseAnimationBuilder,
+  useAnimatedRef,
 } from "react-native-reanimated";
-import { AnimatePresenceContext } from "./AnimatePresence";
+import { AnimatePresence, AnimatePresenceContext } from "./AnimatePresence";
 import {
   AnyConfig,
   attribute,
@@ -33,6 +34,8 @@ import { useMediaQuery } from "./lib/useMediaQuery";
 import { ScreenDimensionProvider } from "./ScreenDimension";
 import { createViewBase } from "./createViewBase";
 import { createTextBase } from "./createTextBase";
+import { AnimateLayoutSize } from "./AnimateLayoutSize";
+import { AnimateLayoutPosition } from "./AnimateLayoutPosition";
 
 export {
   Interaction,
@@ -201,7 +204,8 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
           attrs,
         });
 
-        const { dynamic, variants, transition, ...base } = merged;
+
+        const { dynamic, variants, transition, ...base } = merged as any;
 
         const hasBaseStylesheet = Object.keys(base).length > 0;
         const baseStylesheet = StyleSheet.create({ variant: base });
@@ -214,7 +218,7 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
 
         const variantIndexByName: Record<string, number> = {};
 
-        const currentVariants = Object.entries(current.variants || {});
+        const currentVariants = Object.entries(current?.variants || {});
         currentVariants.forEach(([variantName, variantStyles], index) => {
           variantIndexByName[variantName] = 1;
         });
@@ -525,7 +529,7 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
           return RootComp;
         };
 
-        const component = <Props extends SurfaceProps<VariantStyle & { AAAA: true}> & SurfaceCustomProps>(props: Props & (Props extends { as: any} ? React.ComponentProps<Props['as']> : {})) => {
+        const component = <Props extends SurfaceProps<VariantStyle & { asChild?: true}> & SurfaceCustomProps>(props: Props & (Props extends { as: any} ? React.ComponentProps<Props['as']> : {})) => {
           const theme = useSurfaceTheme();
           const presence = React.useContext(AnimatePresenceContext);
           const styles = styleManager.getStylesheetForTheme(theme);
@@ -580,7 +584,6 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
           };
 
           const applySingleOverride = (override: any) => {
-            // console.log('VISIT OVERRIDE', RootComp, override);
             const isComponentOverride = override?.props;
             if (isComponentOverride) {
               return applySingleOverride(override.props);
@@ -648,6 +651,10 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
             delete nextProps.stateId;
           }
 
+          if ('asChild' in nextProps) {
+            delete nextProps.asChild;
+          }
+
           if (transformAcc) {
             styleProp.push({
               transform: Object.entries(
@@ -670,13 +677,20 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
           // We implement the animated hook if the overrides is defined.
           // Just in case we have an animation in the overrides but no transition or anything in the default props.
           // We should also make it animated if there is style prop because there can be a animatedStyle provided there
+          let animatedRef: ReturnType<typeof useAnimatedRef> | undefined;
           const hasAnimatedHook =
             nextProps.style ||
             nextProps.transition ||
             nextProps.animation ||
             props.overrides;
           if (hasAnimatedHook) {
-            useAnimatedStylesheet(componentProps, presence);
+            animatedRef = useAnimatedRef()
+            useAnimatedStylesheet(
+              animatedRef, 
+              componentProps,
+              presence,
+              props,
+            );
           }
 
           customStylesFunctions.forEach((fn) => fn());
@@ -686,40 +700,84 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
           overridesHanlder.applyGestures(componentProps);
 
           const isAnimated = !!(hasAnimatedHook || props.entering || props.exiting || props.as);
-          const rootComponent = getRootComponent(props.as || Component);
+          const rootComponent = getRootComponent(
+            props.as 
+            || (props.asChild ? props.children.type: null)
+            ||  Component
+          );
           const ComponentToRender = isAnimated ? getAnimatedComp(rootComponent) : rootComponent;
 
 
           presence?.lifecycle?.onRender?.();
-          return conditionalWrap(
-            <ComponentToRender 
-              {...componentProps} 
-              ref={(ref: any) => {
-                compRef.current = ref;
-                if (props.ref) {
-                  if (typeof props.ref === 'function') {
-                    props.ref(ref);
-                  } else {
-                    props.ref.current = ref;
-                  }
+
+          const isPositionAnimated = !!props.transition?.['position'];
+          const isHeightTransition = !props.height && props.transition?.['height']; // is height is specified, then we shouldn't add a size Transition
+          const isWidthTransition = !props.width && props.transition?.['width'];
+          const isAnimatingSize = isHeightTransition || isWidthTransition;
+          const isSizeAnimated = !props.disableLayoutTransitions && isAnimatingSize && !!props.children;
+          const isAnimatingPresence = props.transition?.['children'];
+          const presenceParentRef = isSizeAnimated ? useAnimatedRef<any>() : animatedRef;
+
+          const correctChildren = props.asChild ? props.children: props.children;
+          const children = conditionalWrap(correctChildren, [
+            isAnimatingPresence && ((props) => (
+              <AnimatePresence parentRef={presenceParentRef}>
+                {props.children}
+              </AnimatePresence>
+            )),
+            isSizeAnimated && ((props) => (
+              <AnimateLayoutSize
+                View={BaseView}
+                innerProps={componentProps}
+                innerRef={presenceParentRef}
+                children={props.children}
+                animateHeight={isHeightTransition}
+                animateWidth={isWidthTransition}
+              />
+            )),
+          ]);
+
+          const renderProps = {
+            ...componentProps,
+            children: children,
+            ref: (ref: any) => {
+              compRef.current = ref;
+
+              if (animatedRef) {
+                animatedRef(ref);
+              }
+              if (props.ref) {
+                if (typeof props.ref === 'function') {
+                  props.ref(ref);
+                } else {
+                  props.ref.current = ref;
                 }
-              }} 
-            />,
-            [
-              componentProps.gesture &&
-                ((props) => (
-                  <GestureDetector gesture={componentProps.gesture} {...props}/>
-                )),
-              props.stateId &&
-                ((props) => (
-                  <Interaction.Provider
-                    stateId={props.stateId}
-                    state={overridesHanlder.getOverrideContext(presence)}
-                    {...props}
-                  />
-                )),
-            ],
-          );
+              }
+            },
+          }
+
+          const wrapped = conditionalWrap(<ComponentToRender {...renderProps} />,[
+            isPositionAnimated && ((p) => (
+              <AnimateLayoutPosition
+                debugId={props.debugId}
+                View={BaseView}
+                children={p.children}
+                transition={props.transition?.['position']}
+              />
+            )),
+            componentProps.gesture && ((props) => (
+              <GestureDetector gesture={componentProps.gesture} {...props}/>
+            )),
+            props.stateId && ((props) => (
+              <Interaction.Provider
+                stateId={props.stateId}
+                state={overridesHanlder.getOverrideContext(presence)}
+                children={props.children}
+              />
+            )),
+          ]);
+
+          return wrapped;
         };
 
         configByComponent.set(component, {
@@ -752,6 +810,16 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
     };
   };
 
+  const BaseView = surfaced(RNView).with(ctx => {
+    const variants =  createViewBase(ctx.theme) ;
+    return variants;
+  });
+
+  const BaseText = surfaced(RNText).with(ctx => {
+    const variants =  createTextBase(ctx.theme) ;
+    return variants;
+  });
+
   return Object.assign(surfaced, {
     __types: {
       ThemeValue: {} as ThemeValue,
@@ -777,19 +845,14 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
       return stylesheet
     },
     createView: () => {
-      return surfaced(View).with(ctx => {
-        const variants =  createViewBase(ctx.theme) ;
-        return variants;
-      });
+      return BaseView;
     },
     createText: () => {
-      return surfaced(Text).with(ctx => {
-        const variants =  createTextBase(ctx.theme) ;
-        return variants;
-      });
+      return BaseText;
     }
   });
 
 };
+
 
 
