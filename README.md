@@ -1,34 +1,65 @@
-<img src="./assets/hero.svg" />
-<div style="margin-bottom: 30px"></div>
+<div align="center">
+  <img src="./assets/hero.svg" />
+  <br />
+  <br />
+</div>
 
 # SurfaceKit ▉▊▋▍▎▏
 
-> Lightning-fast, type-safe surface primitives for React and React Native.
+> **Lightning-fast, type-safe surface primitives for React and React Native.**  
+> Stop wrestling with style objects. Start building beautiful UIs with confidence.
 
-## Why SurfaceKit?
-- Move from design tokens to production surfaces without boilerplate
-- Compose typed variants instead of juggling style objects
-- Override behaviour declaratively for hover, press, focus, and presence
-- First-class support for Reanimated, gesture-handler, and Expo fonts
-- Bring your own theme shape; SurfaceKit infers the rest
+[![npm version](https://img.shields.io/npm/v/surfacekit)](https://www.npmjs.com/package/surfacekit)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## Table of Contents
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Wrap Your App With the Provider](#wrap-your-app-with-the-provider)
-- [Build Surfaces With `.with` Factories](#build-surfaces-with-with-factories)
-- [Variants 101](#variants-101)
-- [Dynamic Variants With `attrs.any`](#dynamic-variants-with-attrsany)
-- [Token Lookups and Negative Values](#token-lookups-and-negative-values)
-- [Composing Surfaces](#composing-surfaces)
-- [Per-Instance Overrides](#per-instance-overrides)
-- [Gestures, Focus, and Interaction State](#gestures-focus-and-interaction-state)
-- [Animation Hooks](#animation-hooks)
-- [Helpful Hooks and Utilities](#helpful-hooks-and-utilities)
-- [Base Building Blocks](#base-building-blocks)
-- [Testing & Next Steps](#testing--next-steps)
+---
 
-## Installation
+## 🎯 What is SurfaceKit?
+
+SurfaceKit is your **design system's best friend**. It transforms design tokens into production-ready components without the boilerplate headache. Think of it as **styled-components meets Tailwind meets Framer Motion**—but actually fun to use.
+
+### Why developers love SurfaceKit ✨
+
+- 🚀 **Zero boilerplate** – Move from tokens to components in seconds
+- 🎨 **Type-safe variants** – Compose styles without juggling style objects
+- 🎭 **Declarative interactions** – Hover, press, focus, and presence states made easy
+- ⚡ **Performance first** – Built on Reanimated, gesture-handler, and Expo fonts
+- 🔧 **Your theme, your rules** – Bring any theme shape; SurfaceKit infers the rest
+
+---
+
+## 📚 Table of Contents
+
+**Getting Started**
+- [Installation](#-installation)
+- [Quick Start](#-quick-start-guide)
+
+**Core Concepts**
+- [Setting Up Your Theme](#-setting-up-your-theme)
+- [Creating Surfaces](#-creating-surfaces)
+- [Variants Explained](#-variants-explained)
+- [Dynamic Variants](#-dynamic-variants-with-attrsany)
+
+**Common Tasks** 🎯 *Quick answers to "How do I...?"*
+- [How do I create a button with variants?](#-how-do-i-create-a-button-with-variants)
+- [How do I add hover/press states?](#-how-do-i-add-hoverpress-states)
+- [How do I animate layout changes?](#-how-do-i-animate-layout-changes)
+- [How do I use gestures?](#-how-do-i-use-gestures)
+- [How do I compose components?](#-how-do-i-compose-components)
+
+**Advanced Features**
+- [Animations & Transitions](#-animations--transitions)
+- [Interaction States](#-interaction-states)
+- [Hooks & Utilities](#-hooks--utilities)
+- [Base Components](#-base-components)
+
+**Reference**
+- [API Reference](#-api-reference)
+- [Testing](#-testing)
+
+---
+
+## 📦 Installation
 
 ```bash
 npm install surfacekit
@@ -38,27 +69,51 @@ yarn add surfacekit
 pnpm add surfacekit
 ```
 
-SurfaceKit works with React Native, Expo, and universal (web) projects. Reanimated, gesture-handler, and Expo fonts are optional but unlock advanced features demonstrated below.
+**Peer dependencies** (optional but recommended):
+- `react-native-reanimated` – For animations
+- `react-native-gesture-handler` – For gestures
+- `expo-font` – For font management
 
-## Quick Start
+SurfaceKit works with React Native, Expo, and universal (web) projects.
+
+---
+
+## 🚀 Quick Start Guide
+
+**3 steps to your first surface:**
+
+### Step 1: Define your theme
 
 ```tsx
 // theme.ts
-import { colors, spacing, borderRadius } from './tokens';
-
 export const theme = {
-  colors,
-  spacing,
-  borderRadius,
+  colors: {
+    primary: '#3b82f6',
+    gray: { 50: '#f9fafb', 100: '#f3f4f6', /* ... */ },
+  },
+  spacing: {
+    space1: 4,
+    space2: 8,
+    space4: 16,
+    space6: 24,
+    // ... your spacing scale
+  },
+  borderRadius: {
+    sm: 4,
+    md: 8,
+    lg: 12,
+    full: 9999,
+  },
   fonts: {
     paragraph: {
       default: require('./assets/Inter-Regular.ttf'),
       medium: require('./assets/Inter-Medium.ttf'),
     },
   },
-  // add any additional buckets you need – SurfaceKit keeps the type information
 };
 ```
+
+### Step 2: Create your surfaced instance
 
 ```tsx
 // surfaced.ts
@@ -68,6 +123,8 @@ import type { theme } from './theme';
 type AppTheme = typeof theme;
 export const surfaced = createSurfaced<AppTheme>();
 ```
+
+### Step 3: Build your first component
 
 ```tsx
 // App.tsx
@@ -80,21 +137,14 @@ const Card = surfaced(View).with(({ theme, attrs }) => ({
   backgroundColor: theme.colors.gray[900],
   borderRadius: theme.borderRadius.lg,
   variants: {
-    elevation: attrs.any({ attribute: 'elevation', number: true }),
     tone: {
-      primary: { backgroundColor: theme.colors.blue[600] },
+      primary: { backgroundColor: theme.colors.primary },
       neutral: { backgroundColor: theme.colors.gray[800] },
     },
-  },
-}));
-
-const Heading = surfaced(Text).with(({ theme, attrs }) => ({
-  variants: {
-    intent: {
-      primary: { color: theme.colors.white },
-      secondary: { color: theme.colors.gray[300] },
-    },
-    fontSize: attrs.any({ attribute: 'fontSize', tokens: theme.fontSize, number: true }),
+    elevation: attrs.any({ 
+      attribute: 'elevation', 
+      number: true 
+    }),
   },
 }));
 
@@ -102,220 +152,382 @@ export default function App() {
   return (
     <surfaced.Provider theme={theme}>
       <Card tone="primary" elevation={4}>
-        <Heading intent="secondary" fontSize="lg">
-          SurfaceKit in action
-        </Heading>
+        <Text>Hello SurfaceKit! 🎉</Text>
       </Card>
     </surfaced.Provider>
   );
 }
 ```
 
-## Wrap Your App With the Provider
+**That's it!** You're now building with SurfaceKit. 🎊
 
-`surfaced.Provider` must wrap any components created with `createSurfaced`. The provider delivers your theme, screen dimensions, orientation, keyboard height, and media query context to every surface.
+---
+
+## 🎨 Setting Up Your Theme
+
+Your theme can be **any nested object structure**. SurfaceKit preserves full type information, so you can use dot-separated paths like `colors.gray.500` or `fonts.paragraph.medium` with full autocomplete.
 
 ```tsx
-<surfaced.Provider theme={theme}>
-  {/* your tree */}
-</surfaced.Provider>
+const theme = {
+  // Flat structure? ✅
+  primaryColor: '#3b82f6',
+  
+  // Nested? ✅
+  colors: {
+    brand: {
+      primary: '#3b82f6',
+      secondary: '#8b5cf6',
+    },
+  },
+  
+  // Deep nesting? ✅
+  typography: {
+    headings: {
+      h1: { fontSize: 32, fontWeight: 'bold' },
+      h2: { fontSize: 24, fontWeight: '600' },
+    },
+  },
+};
 ```
 
-Your theme can be any nested object. SurfaceKit preserves typing, so using dot-separated token paths like `paragraph.medium` or `colors.gray.500` is type-safe.
+**The only requirement:** Your theme must include a `fonts` object if you plan to use font tokens.
 
-## Build Surfaces With `.with` Factories
+---
 
-Call `surfaced(Component).with(factory)` to describe the base style for a component. The factory receives a context object with `theme` (your theme tokens) and `attrs` (helpers like `attrs.any` and `attrs.boolean`). Return regular style properties plus a `variants` map, optional `dynamic` style function, and optional `transition` / `animation` configuration.
+## 🏗️ Creating Surfaces
+
+Surfaces are components created with `surfaced(Component).with(factory)`. The factory function receives:
+
+- `theme` – Your entire theme object (fully typed!)
+- `attrs` – Helpers for creating dynamic variants
 
 ```tsx
-const Flex = surfaced(View).with(({ theme, attrs }) => ({
-  flexDirection: 'row',
-  alignItems: 'center',
+const Button = surfaced(View).with(({ theme, attrs }) => ({
+  // Base styles (always applied)
+  paddingHorizontal: theme.spacing.space4,
+  paddingVertical: theme.spacing.space2,
+  borderRadius: theme.borderRadius.md,
+  
+  // Variants (controlled via props)
   variants: {
-    danger: {
-      true: { backgroundColor: theme.colors.red[300] },
+    size: {
+      small: { paddingHorizontal: theme.spacing.space2 },
+      large: { paddingHorizontal: theme.spacing.space6 },
     },
-    gap: attrs.any({ attribute: 'gap', tokens: theme.spacing, number: true, percentage: true }),
+    variant: {
+      primary: { backgroundColor: theme.colors.primary },
+      secondary: { backgroundColor: theme.colors.gray[200] },
+    },
   },
 }));
+
+// Usage
+<Button size="large" variant="primary">Click me</Button>
 ```
 
-At runtime, SurfaceKit merges base styles, variant selections, dynamic styles, inline `style` props, and override styles into a single flattened style array.
+---
 
-## Variants 101
+## 🎭 Variants Explained
 
-Variants let you expose new props that control styles without leaking implementation details.
+Variants are the heart of SurfaceKit. They let you expose new props that control styles without leaking implementation details.
 
-- **Boolean variants** – provide a `true` or `false` key.
-- **String/enum variants** – supply object keys for each option.
-- **Boolean helper** – `attrs.boolean({ ...style })` returns a `{ true: style }` map.
-- **Order matters** – when multiple variants touch the same property, the last prop wins. `<Flex layer2 layer1 />` applies `layer1` last.
+### Boolean Variants
+
+Perfect for on/off states:
 
 ```tsx
-const Badge = surfaced(View).with(({ theme, attrs }) => ({
-  paddingHorizontal: theme.spacing.space3,
-  paddingVertical: theme.spacing.space1,
-  borderRadius: theme.borderRadius.full,
+const Badge = surfaced(View).with(({ theme }) => ({
   variants: {
-    status: {
-      success: { backgroundColor: theme.colors.green[300] },
-      error: { backgroundColor: theme.colors.red[300] },
-    },
     pill: {
       true: { borderRadius: theme.borderRadius.full },
     },
+    outlined: {
+      true: { borderWidth: 1 },
+    },
   },
 }));
+
+<Badge pill outlined />  // Both variants active
 ```
+
+**Pro tip:** Use `attrs.boolean()` for a shortcut:
 
 ```tsx
-<Badge status="success" pill />
+variants: {
+  pill: attrs.boolean({ borderRadius: theme.borderRadius.full }),
+}
 ```
 
-## Dynamic Variants With `attrs.any`
+### String/Enum Variants
 
-`attrs.any(config)` turns a configuration object into a type-safe variant. Use it within the `.with` factory by accessing it from the `attrs` parameter. Common options include:
+For multiple options:
 
-| Option | Purpose |
-| --- | --- |
-| `attribute` / `attributes` | Target one or many style keys when the variant is active |
-| `number`, `percentage`, `string`, `angle`, `color`, `time`, `any` | Enable built-in value types (e.g. `number: true` lets you pass numbers) |
-| `tokens` | Map string values to token paths (dot notation supported) |
-| `multiple` | Accept arrays of values (SurfaceKit maps each item) |
-| `accumulate` | Group values into arrays (perfect for `transform`) |
-| `fonts` | Resolve font tokens and register them with Expo Font |
-| `compute` | Supply a function to compute styles dynamically from the incoming value |
-| `custom` | Inject a `(style, config)` helper when you need full control (e.g. transforms) |
+```tsx
+const Alert = surfaced(View).with(({ theme }) => ({
+  variants: {
+    status: {
+      success: { backgroundColor: theme.colors.green[100] },
+      error: { backgroundColor: theme.colors.red[100] },
+      warning: { backgroundColor: theme.colors.yellow[100] },
+    },
+  },
+}));
 
-Examples pulled from the test suite:
+<Alert status="success">All good!</Alert>
+```
 
+### Variant Order Matters
+
+When multiple variants affect the same property, **the last prop wins**:
+
+```tsx
+<Button variant="primary" variant="secondary" />
+// Result: secondary wins (applied last)
+```
+
+---
+
+## ⚡ Dynamic Variants With `attrs.any`
+
+`attrs.any()` is your Swiss Army knife for creating flexible variants. It turns a config object into a type-safe variant.
+
+### Common Patterns
+
+**Token-based values:**
 ```tsx
 const Spacer = surfaced(View).with(({ theme, attrs }) => ({
   variants: {
-    gap: attrs.any({ attribute: 'gap', tokens: theme.spacing, number: true, percentage: true }),
+    gap: attrs.any({ 
+      attribute: 'gap', 
+      tokens: theme.spacing,  // Maps "space4" → theme.spacing.space4
+      number: true,            // Also accepts numbers
+    }),
+  },
+}));
+
+<Spacer gap="space8" />  // Token lookup
+<Spacer gap={32} />      // Direct number
+```
+
+**Computed styles:**
+```tsx
+const Container = surfaced(View).with(({ theme, attrs }) => ({
+  variants: {
     size: attrs.any({
       tokens: theme.spacing,
-      compute: (value) => ({ padding: value / 2 }),
+      compute: (value) => ({ 
+        padding: value / 2,
+        margin: value,
+      }),
     }),
-    rotate: attrs.any({ accumulate: 'transform', attribute: 'rotate', number: true, angle: true }),
   },
 }));
+
+<Container size={24} />  // padding: 12, margin: 24
 ```
+
+**Transform accumulation:**
+```tsx
+const Rotatable = surfaced(View).with(({ attrs }) => ({
+  variants: {
+    rotate: attrs.any({ 
+      accumulate: 'transform',
+      attribute: 'rotate', 
+      number: true, 
+      angle: true,
+    }),
+  },
+}));
+
+<Rotatable rotate={45} />  // Adds to transform array
+```
+
+### `attrs.any` Options Reference
+
+| Option | Purpose | Example |
+|-------|---------|---------|
+| `attribute` / `attributes` | Target style key(s) | `attribute: 'gap'` or `attributes: ['margin', 'padding']` |
+| `tokens` | Map strings to token paths | `tokens: theme.spacing` |
+| `number`, `percentage`, `string`, `angle`, `color`, `time` | Enable value types | `number: true` |
+| `multiple` | Accept arrays | `multiple: true` → `gap={[4, 8]}` |
+| `accumulate` | Group into arrays (for transforms) | `accumulate: 'transform'` |
+| `fonts` | Register fonts with Expo Font | `fonts: true` |
+| `compute` | Dynamic style computation | `compute: (val) => ({ padding: val / 2 })` |
+| `custom` | Full control over style application | `custom: (style, config) => {...}` |
+
+---
+
+## 🎯 Common Tasks
+
+### How do I create a button with variants?
 
 ```tsx
-<Spacer gap="space8" />       // gap comes from tokens
-<Spacer gap={10} />           // numbers work too
-<Spacer size={12} />          // dynamic compute → padding: 6
-<Spacer rotate={10} />        // transform accumulation
-```
-
-## Token Lookups and Negative Values
-
-Token references can be nested: `fontFamily="paragraph.medium"` resolves to the correct font, and `color="give.me.a.color.hot"` walks arbitrary theme shapes. Prepend `-` to numeric tokens to flip the sign, e.g. `marginLeft="-space28"`.
-
-SurfaceKit keeps falsy token values intact, so `gap="space0"` stays `0` instead of being dropped.
-
-## Composing Surfaces
-
-Surfaces can extend other surfaces. Calling `surfaced(Parent).with(...)` merges base styles, variants, dynamics, and transitions. Child variants override parent variants with the same name while preserving other keys.
-
-```tsx
-const Base = surfaced(View).with(() => ({
+const Button = surfaced(View).with(({ theme, attrs }) => ({
+  paddingHorizontal: theme.spacing.space4,
+  paddingVertical: theme.spacing.space2,
+  borderRadius: theme.borderRadius.md,
   variants: {
-    layer: {
-      true: { borderRadius: 8, backgroundColor: 'red' },
+    size: {
+      small: { paddingHorizontal: theme.spacing.space2 },
+      large: { paddingHorizontal: theme.spacing.space6 },
     },
+    variant: {
+      primary: { backgroundColor: theme.colors.primary },
+      secondary: { backgroundColor: theme.colors.gray[200] },
+    },
+    disabled: attrs.boolean({ opacity: 0.5 }),
   },
 }));
 
-const Fancy = surfaced(Base).with(() => ({
-  variants: {
-    layer: {
-      true: { borderRadius: 16 },
-    },
-  },
-}));
-
-// Fancy merges: backgroundColor from Base + borderRadius from Fancy
+<Button size="large" variant="primary" disabled>
+  Submit
+</Button>
 ```
 
-Use `.as(Component)` to swap the underlying primitive while keeping the same styling contract.
+### How do I add hover/press states?
 
-
-`with` can be an object or an array. When you pass styles in `with.style`, they are appended to the style array so you can tweak individual instances without re-declaring variants.
-
-### Overrides
-
-Use the `overrides` prop to describe how a component should react to hover, press, focus, entrance, or exit state.  You can return objects, arrays, or React elements built with the provided `Props` helper.
+Use the `overrides` prop with `stateId`:
 
 ```tsx
 <Button
-  stateId="cta"
-  overrides={(state) => ([
-    state.hovered && { tone: "primary" },
-    state.pressed &&  { elevation: 12},
-  ])}
-/>
+  stateId="submit-button"
+  overrides={(state) => [
+    state.hovered && { backgroundColor: theme.colors.primaryDark },
+    state.pressed && { transform: [{ scale: 0.95 }] },
+    state.focused && { borderWidth: 2 },
+  ]}
+>
+  Click me
+</Button>
 ```
 
-Internally, SurfaceKit memoises computed variants so repeated overrides stay fast, even for dynamic variants.
+**Available states:**
+- `state.hovered` – Mouse/touch hover
+- `state.pressed` – Active press
+- `state.focused` – Keyboard focus
+- `state.exiting` – Component is unmounting (with `transition={{ children: true }}`)
 
-## Gestures, Focus, and Interaction State
+### How do I animate layout changes?
 
-- Pass a `gesture={Gesture.*(...)}` from `react-native-gesture-handler` to mount complex gesture pipelines. SurfaceKit automatically composes gestures declared in overrides.
-- Add `stateId` to opt-in to interaction tracking. All descendants can read the shared state via `Interaction.Inline`.
+Use `transition` prop:
+
+```tsx
+// Animate height/width changes
+<View
+  transition={{ height: true, width: true }}
+>
+  {content}
+</View>
+
+// Animate position changes (reordering)
+<View
+  transition={{ position: true }}
+>
+  {items.map(item => <Item key={item.id} />)}
+</View>
+
+// Animate children enter/exit
+<View transition={{ children: true }}>
+  {items.map(item => (
+    <View
+      key={item.id}
+      overrides={(state) => [
+        state.exiting && { opacity: 0, detach: true },
+      ]}
+    />
+  ))}
+</View>
+```
+
+**Important:** Size transitions only work when `height`/`width` props are **not** explicitly set. SurfaceKit measures content automatically.
+
+### How do I use gestures?
+
+Pass gestures from `react-native-gesture-handler`:
 
 ```tsx
 import { Gesture } from 'react-native-gesture-handler';
 
 <Surface
-  stateId="item"
-  gesture={Gesture.Hover().onBegin(() => console.log('hover'))}
-  overrides={(state) => ([
-    state.hovered && { tone="primary" },
-  ])}
+  stateId="draggable"
+  gesture={Gesture.Pan()
+    .onUpdate((e) => {
+      // Handle drag
+    })
+  }
+  overrides={(state) => [
+    state.pressed && { opacity: 0.8 },
+  ]}
 />
 ```
 
-## Animation Hooks
+SurfaceKit automatically composes gestures declared in `overrides`.
 
-SurfaceKit integrates with Reanimated 3/4:
+### How do I compose components?
 
-- `transition` – describe declarative transitions per surface.
-- `animation` – attach keyframe objects and durations.
-- `entering` / `exiting` – forward Reanimated animation builders.
-- Wrap groups with `AnimatePresence` (exported from the root) to orchestrate enter/exit animations while keeping overrides working.
+Extend existing surfaces:
+
+```tsx
+const BaseCard = surfaced(View).with(() => ({
+  padding: 16,
+  borderRadius: 8,
+  variants: {
+    elevation: {
+      low: { elevation: 2 },
+      high: { elevation: 8 },
+    },
+  },
+}));
+
+const FancyCard = surfaced(BaseCard).with(() => ({
+  // Inherits all BaseCard styles and variants
+  shadowColor: '#000',
+  variants: {
+    elevation: {
+      // Overrides BaseCard's elevation variant
+      high: { elevation: 12 },
+    },
+    glow: {
+      true: { shadowOpacity: 0.5 },
+    },
+  },
+}));
+
+<FancyCard elevation="high" glow />
+```
+
+Use `.as()` to swap the underlying component:
+
+```tsx
+const Button = surfaced(View).with(/* ... */);
+const LinkButton = Button.as(Text);
+```
+
+---
+
+## 🎬 Animations & Transitions
+
+SurfaceKit integrates seamlessly with Reanimated 3/4.
 
 ### Layout Size Transitions
 
-Enable smooth animations when a component's size changes by setting `transition={{ height: true }}` or `transition={{ width: true }}`. This is particularly useful for containers that dynamically resize based on their content.
-
-**Important:** Size transitions only work when the `height` or `width` props are not explicitly set. SurfaceKit automatically measures the content and animates between size changes.
+Animate containers that resize based on content:
 
 ```tsx
 <View
-  display="flex"
-  flexDirection="column"
-  backgroundColor="green"
-  gap={10}
-  padding={10}
-  transition={{ 
-    height: true,
-    width: true,
-  }}
+  transition={{ height: true, width: true }}
 >
-  {/* Content that changes size */}
-  {items.map((item) => (
-    <View key={item} height={50} backgroundColor="blue" />
+  {items.map(item => (
+    <View key={item.id} height={50} />
   ))}
 </View>
 ```
 
-When children are added or removed, the container smoothly animates to accommodate the new size. This works seamlessly with children transitions (see below).
+**Note:** Don't set explicit `height`/`width` props on the container. SurfaceKit measures automatically.
 
 ### Layout Position Transitions
 
-Animate position changes when elements move within their parent container using `transition={{ position: true }}`. This is ideal for reordering lists, moving elements between containers, or animating layout shifts.
+Animate elements moving within their parent:
 
 ```tsx
 <View display="flex" flexDirection="row" gap={10}>
@@ -324,10 +536,7 @@ Animate position changes when elements move within their parent container using 
       key={item}
       width={50}
       height={50}
-      backgroundColor="blue"
-      transition={{ 
-        position: true,
-      }}
+      transition={{ position: true }}
     >
       <Text>{item}</Text>
     </View>
@@ -335,77 +544,57 @@ Animate position changes when elements move within their parent container using 
 </View>
 ```
 
-When the `items` array is reordered, each element smoothly animates to its new position using a spring animation.
+Perfect for reordering lists or moving elements between containers.
 
 ### Children Transitions
 
-Enable enter/exit animations for dynamically added or removed children with `transition={{ children: true }}`. This wraps children in an `AnimatePresence` context, allowing you to use `state.exiting` and `detach` in your `overrides` function.
+Enable enter/exit animations for dynamically added/removed children:
 
 ```tsx
-<View
-  display="flex"
-  flexDirection="column"
-  backgroundColor="green"
-  gap={10}
-  padding={10}
-  transition={{ 
-    children: true,
-  }}
->
+<View transition={{ children: true }}>
   {items.map((item) => (
     <View
-      key={item}
-      width={100}
-      height={100}
-      backgroundColor="blue"
-      transition={{ 
-        opacity: true,
-        position: true,
-      }}
-      overrides={(state) => {
-        return [
-          state.exiting && { 
-            opacity: 0, 
-            detach: true 
-          },
-        ];
-      }}
+      key={item.id}
+      transition={{ opacity: true }}
+      overrides={(state) => [
+        state.exiting && { 
+          opacity: 0, 
+          detach: true,  // Removes from layout after animation
+        },
+      ]}
     >
-      <Text>{item}</Text>
+      {item.content}
     </View>
   ))}
 </View>
 ```
 
 **Key features:**
-- `state.exiting` – `true` when a child is being removed from the tree
-- `detach: true` – removes the element from the layout flow after the exit animation completes, preventing layout shifts
-- Works seamlessly with size transitions – when children exit, the parent container can animate its size accordingly
+- `state.exiting` – `true` when child is being removed
+- `detach: true` – Removes element from layout flow after animation
+- Works seamlessly with size transitions
 
-**Combining transitions:**
+### Combining Transitions
 
-You can combine multiple transition types for complex animations:
+Mix and match for complex animations:
 
 ```tsx
 <View
   transition={{ 
-    height: true,      // Animate container height
-    width: true,       // Animate container width
-    children: true,    // Enable enter/exit animations
+    height: true,      // Container height
+    width: true,       // Container width
+    children: true,    // Enter/exit animations
   }}
 >
   {items.map((item) => (
     <View
-      key={item}
+      key={item.id}
       transition={{ 
-        position: true,  // Animate position when reordered
-        opacity: true,    // Animate opacity
+        position: true,  // Position when reordered
+        opacity: true,   // Fade in/out
       }}
       overrides={(state) => [
-        state.exiting && { 
-          opacity: 0, 
-          detach: true 
-        },
+        state.exiting && { opacity: 0, detach: true },
       ]}
     >
       {item}
@@ -414,36 +603,326 @@ You can combine multiple transition types for complex animations:
 </View>
 ```
 
-## Helpful Hooks and Utilities
+### Reanimated Animations
 
-`createSurfaced` exposes several helpers:
-
-- `surfaced.useTheme()` – read the active theme.
-- `surfaced.useFonts()` – register font tokens automatically with Expo Font and know when they are ready.
-- `surfaced.useOrientation()` – observe device orientation changes.
-- `surfaced.useMediaQuery(query)` – evaluate responsive breakpoints.
-- `surfaced.useVariantStyle(Component, variant, value)` – compute raw variant output outside render.
-
-`Interaction.Inline` lets you consume interaction state in children:
+Use Reanimated's animation builders:
 
 ```tsx
-<Interaction.Inline stateId="cta">
-  {(state) => state.hovered ? <HoverTooltip /> : null}
-</Interaction.Inline>
+import { FadeIn, FadeOut } from 'react-native-reanimated';
+
+<Surface
+  entering={FadeIn.duration(300)}
+  exiting={FadeOut.duration(200)}
+>
+  Content
+</Surface>
 ```
 
-## Base Building Blocks
+### Keyframe Animations
 
-SurfaceKit ships with opinionated primitives you can opt into:
+```tsx
+<Surface
+  animation={{
+    keyframes: {
+      opacity: [0, 1, 0],
+      transform: [{ scale: [0.8, 1.2, 1] }],
+    },
+    duration: 1000,
+  }}
+>
+  Animated content
+</Surface>
+```
 
-- `createViewBase(surfaced)` – returns a surface packed with layout, spacing, transform, and background variants (mirrors the exhaustive tests in `tests/charm.test.tsx`).
-- `createTextBase(surfaced)` – typography-focused surface with font, color, and decoration variants wired to tokens.
-- `ScreenDimension` – provider & hook pair already included inside `surfaced.Provider`.
+---
 
-Use these as ready-made building blocks or as references when crafting your own variant maps.
+## 🎮 Interaction States
 
-## Testing & Next Steps
+### Using `stateId` and `overrides`
 
-The test suite under `tests/*.test.tsx` demonstrates every capability in context. Start by running the stories from `tests/charm.test.tsx` to see how variants, tokens, overrides, and composition behave under snapshot tests.
+Opt into interaction tracking with `stateId`:
 
-Have ideas or questions? Open an issue, file a PR, and if SurfaceKit saves you time, a ⭐️ on GitHub goes a long way.
+```tsx
+<Button
+  stateId="cta-button"
+  overrides={(state) => [
+    state.hovered && { backgroundColor: theme.colors.primaryDark },
+    state.pressed && { transform: [{ scale: 0.95 }] },
+    state.focused && { borderWidth: 2, borderColor: theme.colors.primary },
+  ]}
+>
+  Click me
+</Button>
+```
+
+### Reading State in Children
+
+Use `Interaction.Inline` to consume state in child components:
+
+```tsx
+import { Interaction } from 'surfacekit';
+
+<Surface stateId="card">
+  <Interaction.Inline stateId="card">
+    {(state) => (
+      state.hovered ? <Tooltip>Hovering!</Tooltip> : null
+    )}
+  </Interaction.Inline>
+</Surface>
+```
+
+**Available states:**
+- `hovered` – Mouse/touch hover active
+- `pressed` – Press gesture active
+- `focused` – Keyboard focus active
+- `exiting` – Component unmounting (requires `transition={{ children: true }}`)
+
+---
+
+## 🛠️ Hooks & Utilities
+
+SurfaceKit provides helpful hooks for common tasks:
+
+### `surfaced.useTheme()`
+
+Access the current theme:
+
+```tsx
+const MyComponent = () => {
+  const theme = surfaced.useTheme();
+  return <View backgroundColor={theme.colors.primary} />;
+};
+```
+
+### `surfaced.useFonts()`
+
+Register font tokens and know when they're ready:
+
+```tsx
+const App = () => {
+  const { loaded, error } = surfaced.useFonts();
+  
+  if (!loaded) return <LoadingScreen />;
+  if (error) return <ErrorScreen error={error} />;
+  
+  return <YourApp />;
+};
+```
+
+### `surfaced.useOrientation()`
+
+Observe device orientation:
+
+```tsx
+const MyComponent = () => {
+  const orientation = surfaced.useOrientation();
+  
+  return (
+    <View flexDirection={orientation === 'landscape' ? 'row' : 'column'}>
+      Content
+    </View>
+  );
+};
+```
+
+### `surfaced.useMediaQuery(query)`
+
+Evaluate responsive breakpoints:
+
+```tsx
+const MyComponent = () => {
+  const isMobile = surfaced.useMediaQuery('(max-width: 768px)');
+  
+  return (
+    <View padding={isMobile ? 16 : 32}>
+      Content
+    </View>
+  );
+};
+```
+
+### `surfaced.useVariantStyle(Component, variant, value)`
+
+Compute variant styles outside render:
+
+```tsx
+const MyComponent = () => {
+  const style = surfaced.useVariantStyle(Button, 'variant', 'primary');
+  // Use style for calculations, etc.
+};
+```
+
+---
+
+## 🧱 Base Components
+
+SurfaceKit ships with opinionated base components you can use or reference:
+
+### `createViewBase(surfaced)`
+
+A fully-featured View surface with layout, spacing, transform, and background variants:
+
+```tsx
+import { createViewBase } from 'surfacekit';
+
+const View = createViewBase(surfaced);
+
+// Now you have all these variants:
+<View 
+  display="flex"
+  flexDirection="row"
+  gap="space4"
+  padding="space6"
+  backgroundColor="gray.900"
+  borderRadius="lg"
+  rotate={45}
+/>
+```
+
+### `createTextBase(surfaced)`
+
+Typography-focused surface with font, color, and decoration variants:
+
+```tsx
+import { createTextBase } from 'surfacekit';
+
+const Text = createTextBase(surfaced);
+
+<Text 
+  fontSize="lg"
+  fontWeight="bold"
+  color="primary"
+  textDecoration="underline"
+>
+  Styled text
+</Text>
+```
+
+**Tip:** Check the test suite (`tests/charm.test.tsx`) to see all available variants.
+
+---
+
+## 📖 API Reference
+
+### `createSurfaced<Theme>()`
+
+Creates a surfaced instance bound to your theme type.
+
+**Returns:**
+- `surfaced(Component).with(factory)` – Create surfaces
+- `surfaced.Provider` – Theme provider component
+- `surfaced.useTheme()` – Hook to access theme
+- `surfaced.useFonts()` – Hook to manage fonts
+- `surfaced.useOrientation()` – Hook for orientation
+- `surfaced.useMediaQuery(query)` – Hook for media queries
+- `surfaced.useVariantStyle(Component, variant, value)` – Compute variant styles
+
+### `surfaced(Component).with(factory)`
+
+Creates a surface component.
+
+**Factory signature:**
+```tsx
+({ theme, attrs }) => ({
+  // Base styles
+  padding: theme.spacing.space4,
+  
+  // Variants
+  variants: {
+    size: { small: {...}, large: {...} },
+  },
+  
+  // Dynamic styles (optional)
+  dynamic: (props) => ({ opacity: props.disabled ? 0.5 : 1 }),
+  
+  // Transitions (optional)
+  transition: { opacity: true },
+  
+  // Animation config (optional)
+  animation: { keyframes: {...}, duration: 1000 },
+})
+```
+
+### Surface Props
+
+All surfaces accept:
+
+- **Variant props** – Any keys defined in `variants`
+- **`as`** – Swap underlying component: `as={Text}`
+- **`gesture`** – Gesture handler gesture
+- **`transition`** – Transition config: `{ height: true, position: true, children: true }`
+- **`animation`** – Keyframe animation config
+- **`entering`** / **`exiting`** – Reanimated animation builders
+- **`stateId`** – Enable interaction tracking
+- **`overrides`** – Function returning override styles: `(state) => [...]`
+- **`style`** – Standard React Native style prop (merged last)
+
+### Token Lookups
+
+SurfaceKit supports nested token paths:
+
+```tsx
+// These all work:
+<View backgroundColor="colors.primary" />
+<View backgroundColor="colors.brand.primary" />
+<View padding="spacing.space4" />
+<View fontFamily="fonts.paragraph.medium" />
+```
+
+**Negative values:** Prepend `-` to flip numeric tokens:
+```tsx
+<View marginLeft="-space4" />  // -theme.spacing.space4
+```
+
+**Falsy values:** SurfaceKit preserves `0` and `false` values:
+```tsx
+<View gap="space0" />  // Stays 0, not dropped
+```
+
+---
+
+## 🧪 Testing
+
+The test suite demonstrates every capability in context. Start with:
+
+```bash
+npm test
+```
+
+**Key test files:**
+- `tests/charm.test.tsx` – Variants, tokens, overrides, composition
+- `tests/animated.test.tsx` – Animation and transition examples
+- `tests/gesture.test.tsx` – Gesture integration
+- `tests/overrides.test.tsx` – Interaction state handling
+
+---
+
+## 🤝 Contributing
+
+Found a bug? Have an idea? We'd love your help!
+
+1. Open an issue describing the problem or feature
+2. Fork the repo and create a branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+**Questions?** Check the test suite—it's full of examples!
+
+---
+
+## 📄 License
+
+MIT © [Your Name]
+
+---
+
+## ⭐ Show Your Support
+
+If SurfaceKit saves you time, a ⭐️ on GitHub goes a long way!
+
+---
+
+<div align="center">
+  <strong>Built with ❤️ for React and React Native developers</strong>
+</div>
