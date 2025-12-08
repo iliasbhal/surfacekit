@@ -286,6 +286,134 @@ SurfaceKit integrates with Reanimated 3/4:
 - `entering` / `exiting` – forward Reanimated animation builders.
 - Wrap groups with `AnimatePresence` (exported from the root) to orchestrate enter/exit animations while keeping overrides working.
 
+### Layout Size Transitions
+
+Enable smooth animations when a component's size changes by setting `transition={{ height: true }}` or `transition={{ width: true }}`. This is particularly useful for containers that dynamically resize based on their content.
+
+**Important:** Size transitions only work when the `height` or `width` props are not explicitly set. SurfaceKit automatically measures the content and animates between size changes.
+
+```tsx
+<View
+  display="flex"
+  flexDirection="column"
+  backgroundColor="green"
+  gap={10}
+  padding={10}
+  transition={{ 
+    height: true,
+    width: true,
+  }}
+>
+  {/* Content that changes size */}
+  {items.map((item) => (
+    <View key={item} height={50} backgroundColor="blue" />
+  ))}
+</View>
+```
+
+When children are added or removed, the container smoothly animates to accommodate the new size. This works seamlessly with children transitions (see below).
+
+### Layout Position Transitions
+
+Animate position changes when elements move within their parent container using `transition={{ position: true }}`. This is ideal for reordering lists, moving elements between containers, or animating layout shifts.
+
+```tsx
+<View display="flex" flexDirection="row" gap={10}>
+  {items.map((item) => (
+    <View
+      key={item}
+      width={50}
+      height={50}
+      backgroundColor="blue"
+      transition={{ 
+        position: true,
+      }}
+    >
+      <Text>{item}</Text>
+    </View>
+  ))}
+</View>
+```
+
+When the `items` array is reordered, each element smoothly animates to its new position using a spring animation.
+
+### Children Transitions
+
+Enable enter/exit animations for dynamically added or removed children with `transition={{ children: true }}`. This wraps children in an `AnimatePresence` context, allowing you to use `state.exiting` and `detach` in your `overrides` function.
+
+```tsx
+<View
+  display="flex"
+  flexDirection="column"
+  backgroundColor="green"
+  gap={10}
+  padding={10}
+  transition={{ 
+    children: true,
+  }}
+>
+  {items.map((item) => (
+    <View
+      key={item}
+      width={100}
+      height={100}
+      backgroundColor="blue"
+      transition={{ 
+        opacity: true,
+        position: true,
+      }}
+      overrides={(state) => {
+        return [
+          state.exiting && { 
+            opacity: 0, 
+            detach: true 
+          },
+        ];
+      }}
+    >
+      <Text>{item}</Text>
+    </View>
+  ))}
+</View>
+```
+
+**Key features:**
+- `state.exiting` – `true` when a child is being removed from the tree
+- `detach: true` – removes the element from the layout flow after the exit animation completes, preventing layout shifts
+- Works seamlessly with size transitions – when children exit, the parent container can animate its size accordingly
+
+**Combining transitions:**
+
+You can combine multiple transition types for complex animations:
+
+```tsx
+<View
+  transition={{ 
+    height: true,      // Animate container height
+    width: true,       // Animate container width
+    children: true,    // Enable enter/exit animations
+  }}
+>
+  {items.map((item) => (
+    <View
+      key={item}
+      transition={{ 
+        position: true,  // Animate position when reordered
+        opacity: true,    // Animate opacity
+      }}
+      overrides={(state) => [
+        state.exiting && { 
+          opacity: 0, 
+          detach: true 
+        },
+      ]}
+    >
+      {item}
+    </View>
+  ))}
+</View>
+```
+
 ## Helpful Hooks and Utilities
 
 `createSurfaced` exposes several helpers:
