@@ -14,11 +14,6 @@ var React12__default = /*#__PURE__*/_interopDefault(React12);
 var Animated__default = /*#__PURE__*/_interopDefault(Animated);
 
 // src/surface.tsx
-var ANIMATE_PRESENCE_PROPS_KEY = "__AnimatePresenceProps__";
-var getAnimatedPresenceProps = (props) => {
-  const animtePresencProps = props[ANIMATE_PRESENCE_PROPS_KEY] || {};
-  return animtePresencProps;
-};
 var AnimatePresenceContext = React12__default.default.createContext(null);
 var AnimatePresence = (props) => {
   const mode = props.mode || "sync";
@@ -2627,6 +2622,7 @@ var createSurfaced2 = () => {
     useFonts,
     useOrientation: useDeviceOrientation,
     useMediaQuery,
+    useScreenDimensions,
     Provider: ThemeProvider,
     useVariantStyle: (component, variant, value) => {
       const theme = useSurfaceTheme();
@@ -2648,21 +2644,13 @@ var createSurfaced2 = () => {
   });
 };
 
-exports.ANIMATE_PRESENCE_PROPS_KEY = ANIMATE_PRESENCE_PROPS_KEY;
-exports.AnimatePresence = AnimatePresence;
-exports.AnimatePresenceContext = AnimatePresenceContext;
 exports.ContentSizing = ContentSizing;
 exports.Cursor = Cursor;
 exports.FlexDirection = FlexDirection;
 exports.Interaction = Interaction;
 exports.Position = Position;
-exports.ScreenDimensionProvider = ScreenDimensionProvider;
 exports.createSurfaced = createSurfaced2;
-exports.createTextBase = createTextBase;
 exports.createTheme = createTheme;
-exports.createViewBase = createViewBase;
-exports.getAnimatedPresenceProps = getAnimatedPresenceProps;
 exports.getTypedTheme = getTypedTheme;
-exports.useScreenDimensions = useScreenDimensions;
 //# sourceMappingURL=index.cjs.map
 //# sourceMappingURL=index.cjs.map

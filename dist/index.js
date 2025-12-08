@@ -1,17 +1,12 @@
 import { useFonts } from 'expo-font';
 import React12, { createContext, useContext, useState, useEffect } from 'react';
-import { StyleSheet, useWindowDimensions, View, Text, Platform } from 'react-native';
+import { StyleSheet, View, Text, useWindowDimensions, Platform } from 'react-native';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import Animated, { useAnimatedRef, useAnimatedStyle, measure, useSharedValue, cancelAnimation, makeMutable, withTiming, ReduceMotion, Easing } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import { Orientation, addOrientationChangeListener, removeOrientationChangeListener, getOrientationAsync } from 'expo-screen-orientation';
 
 // src/surface.tsx
-var ANIMATE_PRESENCE_PROPS_KEY = "__AnimatePresenceProps__";
-var getAnimatedPresenceProps = (props) => {
-  const animtePresencProps = props[ANIMATE_PRESENCE_PROPS_KEY] || {};
-  return animtePresencProps;
-};
 var AnimatePresenceContext = React12.createContext(null);
 var AnimatePresence = (props) => {
   const mode = props.mode || "sync";
@@ -2620,6 +2615,7 @@ var createSurfaced2 = () => {
     useFonts: useFonts$1,
     useOrientation: useDeviceOrientation,
     useMediaQuery,
+    useScreenDimensions,
     Provider: ThemeProvider,
     useVariantStyle: (component, variant, value) => {
       const theme = useSurfaceTheme();
@@ -2641,6 +2637,6 @@ var createSurfaced2 = () => {
   });
 };
 
-export { ANIMATE_PRESENCE_PROPS_KEY, AnimatePresence, AnimatePresenceContext, ContentSizing, Cursor, FlexDirection, Interaction, Position, ScreenDimensionProvider, createSurfaced2 as createSurfaced, createTextBase, createTheme, createViewBase, getAnimatedPresenceProps, getTypedTheme, useScreenDimensions };
+export { ContentSizing, Cursor, FlexDirection, Interaction, Position, createSurfaced2 as createSurfaced, createTheme, getTypedTheme };
 //# sourceMappingURL=index.js.map
 //# sourceMappingURL=index.js.map
