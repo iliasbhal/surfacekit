@@ -1,7 +1,7 @@
-import React, { useContext, useEffect } from 'react';
-import Animated, {  AnimatedRef, measure, useAnimatedRef, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
-import { AnimatePresenceContext } from './AnimatePresence';
+import React, { RefObject } from 'react';
+import { AnimatedRef, measure, useAnimatedRef, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useLayoutSize } from './lib/useLayoutSize';
+import { LayoutChangeEvent } from 'react-native';
 
 interface LayoutMeasure {
   x: number;
@@ -12,7 +12,7 @@ interface LayoutMeasure {
 const useTrackPosition = (trackRef: AnimatedRef<any>, debugId?: string) => {
   const [position, setPosition] = React.useState<Partial<LayoutMeasure>>({})
 
-  const onLayout =   () => {
+  const onLayout = (event?: LayoutChangeEvent) => {
     const trackMeasure = measure(trackRef)!;
     const canCompute = !!(trackMeasure);
     if (!canCompute) return;
@@ -92,15 +92,15 @@ export const AnimateLayoutPosition : React.FC<React.PropsWithChildren<{ debugId?
   });
 
 
-  const child = React.Children.only(props.children);
+  const child = React.Children.only(props.children) as any;
 
-  const positionStyle = child.props.style.map((style) => {
+  const positionStyle = child.props.style.map((style: any) => {
     const isAnimatedStyle = style.viewDescriptors;
     if (isAnimatedStyle) {
       return style;
     }
     
-    const positionStyle = {};
+    const positionStyle: Record<string, any> = {};
     const positionAttrs = [
       'position', 'top', 'left', 'right', 'bottom',
       'transform', 'margin', 'marginTop', 'marginBottom', 
@@ -137,7 +137,7 @@ export const AnimateLayoutPosition : React.FC<React.PropsWithChildren<{ debugId?
     isSizeMeasured && ( 
       <View
         key={"track"}
-        ref={(ref) => {
+        ref={(ref: any) => {
           trackRef(ref);
           child.props.ref?.(ref);
         }}
@@ -155,11 +155,11 @@ export const AnimateLayoutPosition : React.FC<React.PropsWithChildren<{ debugId?
     React.cloneElement(child, {
       key:"apply",
       ...child.props,
-      ref: (ref) => {
+      ref: (ref: any) => {
         applyRef(ref);
         child.props.ref?.(ref);
       },
-      onLayout: (event) => {
+      onLayout: (event: LayoutChangeEvent) => {
         applyPosition?.onLayout?.(event);
         child.props.onLayout?.(event);
       },

@@ -526,8 +526,6 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
         };
 
         const component = <Props extends SurfaceProps<VariantStyle & { AAAA: true}> & SurfaceCustomProps>(props: Props & (Props extends { as: any} ? React.ComponentProps<Props['as']> : {})) => {
-          const debug = (...args: any[]) => props.debug && console.log(...args);
-
           const theme = useSurfaceTheme();
           const presence = React.useContext(AnimatePresenceContext);
           const styles = styleManager.getStylesheetForTheme(theme);

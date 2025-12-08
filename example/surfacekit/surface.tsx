@@ -204,7 +204,8 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
           attrs,
         });
 
-        const { dynamic, variants, transition, ...base } = merged;
+
+        const { dynamic, variants, transition, ...base } = merged as any;
 
         const hasBaseStylesheet = Object.keys(base).length > 0;
         const baseStylesheet = StyleSheet.create({ variant: base });
@@ -217,7 +218,7 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
 
         const variantIndexByName: Record<string, number> = {};
 
-        const currentVariants = Object.entries(current.variants || {});
+        const currentVariants = Object.entries(current?.variants || {});
         currentVariants.forEach(([variantName, variantStyles], index) => {
           variantIndexByName[variantName] = 1;
         });
@@ -534,9 +535,6 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
           const styles = styleManager.getStylesheetForTheme(theme);
           const compRef = React.useRef<T>(null);
 
-          if (props.debugId) {
-            console.log('PRESENCE (RENDER VIEW)', props.debugId, presence);
-          }
           // if there is a `stateId` in props, we will setup
           // the gestures and focus props by default. This is to simplify
           // avoid implementing a more complex tracking of what has to needs to be setup.
@@ -658,7 +656,6 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
           }
 
           if (transformAcc) {
-            // @ts-expect-error
             styleProp.push({
               transform: Object.entries(
                 transformAcc.reduce((acc: any, curr: any) => {
@@ -724,7 +721,7 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
           const correctChildren = props.asChild ? props.children: props.children;
           const children = conditionalWrap(correctChildren, [
             isAnimatingPresence && ((props) => (
-              <AnimatePresence parentRef={presenceParentRef} debugId={props.debugId}>
+              <AnimatePresence parentRef={presenceParentRef}>
                 {props.children}
               </AnimatePresence>
             )),
