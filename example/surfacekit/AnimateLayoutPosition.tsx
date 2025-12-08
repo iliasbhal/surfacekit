@@ -2,7 +2,7 @@ import React, { RefObject } from 'react';
 import { AnimatedRef, measure, useAnimatedRef, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useLayoutSize } from './lib/useLayoutSize';
 import { LayoutChangeEvent } from 'react-native';
-import * as defaultAnimations from './lib/defaultAnimations';
+import { animateToValue } from './lib/defaultAnimations';
 
 interface LayoutMeasure {
   x: number;
@@ -90,8 +90,8 @@ export const AnimateLayoutPosition : React.FC<React.PropsWithChildren<AnimateLay
     const isXChanged = currentTranslateRef.current.x !== nextX;
     const isYChanged = currentTranslateRef.current.y !== nextY;
     if (isXChanged || isYChanged) {
-      translateX.value = defaultAnimations.Natural(nextX);
-      translateY.value = defaultAnimations.Natural(nextY);
+      translateX.value = animateToValue(nextX, props.transition);
+      translateY.value = animateToValue(nextY, props.transition);
       currentTranslateRef.current.x = nextX;
       currentTranslateRef.current.y = nextY;
     }
@@ -152,10 +152,10 @@ export const AnimateLayoutPosition : React.FC<React.PropsWithChildren<AnimateLay
           ...positionStyle,
           sizeTracker.size,
           {
-            // opacity: 0,
-            // backgroundColor: 'transparent'
-            opacity: 1,
-            backgroundColor: 'black'
+            opacity: 0,
+            // position: 'relative',
+            zIndex: -1,
+            backgroundColor: 'transparent'
           }
         ]}
       />
@@ -172,6 +172,7 @@ export const AnimateLayoutPosition : React.FC<React.PropsWithChildren<AnimateLay
         child.props.onLayout?.(event);
       },
       style: [
+        { zIndex: 1 },
         ...child.props.style,
         animatedPositionStyle,
         isSizeMeasured && {
