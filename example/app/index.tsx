@@ -40,6 +40,7 @@ export default function ModalScreen() {
     >
       <LayoutPlayground count={count} />
       <LayoutPlayground2 count={count} />
+      <LayoutPlayground3 count={count} />
       <ReOrderPlayground items={items} />
       <TogglePlayground active={toggle} />
     </View>
@@ -136,6 +137,7 @@ const LayoutPlayground : React.FC<{ count: number }> = (props) => {
         flexDirection='column'
         backgroundColor="green"
         width={100}
+        gap="size4"
         padding="size4"
         transition={{ 
           height: true,
@@ -185,9 +187,8 @@ const LayoutPlayground2 : React.FC<{ count: number }> = (props) => {
       <View
         debugId="debug"
         display='flex'
-        flexDirection='column'
+        flexDirection='row'
         backgroundColor="green"
-        width={100}
         gap="size4"
         padding="size4"
         transition={{ 
@@ -200,7 +201,6 @@ const LayoutPlayground2 : React.FC<{ count: number }> = (props) => {
           <View
             key={i}
             debugId={`debug-${i}`}
-            width="100%"
             transition={{ 
               opacity: true,
               position: true,
@@ -213,8 +213,59 @@ const LayoutPlayground2 : React.FC<{ count: number }> = (props) => {
             }}
           >
             <View
-              width={'100%'}
               height={100}
+              width={100}
+              overflowVisible
+              justifyCenter
+              itemsCenter
+              
+              backgroundColor="blue"
+            >
+              <Text fontFamily='Inter.ExtraBold' fontSize={33} color="white">{i}</Text>
+            </View>
+          </View>
+        ))}
+      </View>
+    </View>
+  )
+}
+
+
+const LayoutPlayground3 : React.FC<{ count: number }> = (props) => {
+
+  return (
+    <View display='flex' flexDirection='column' flex={1} itemsCenter>
+      <View
+        debugId="debug"
+        display='flex'
+        flexDirection='column'
+        backgroundColor="green"
+        gap="size4"
+        padding="size4"
+        transition={{ 
+          height: true,
+          width: true,
+          children: true,
+        }}
+      >
+        {Array.from({ length: props.count }).map((_, i) => (
+          <View
+            key={i}
+            debugId={`debug-${i}`}
+            transition={{ 
+              opacity: true,
+              position: true,
+            }}            
+            overrides={(state) => {
+              return [
+                // state.initial && { opacity: 1 },
+                state.exiting && { opacity: 0, detach: true },
+              ];
+            }}
+          >
+            <View
+              height={100}
+              width={100}
               overflowVisible
               justifyCenter
               itemsCenter

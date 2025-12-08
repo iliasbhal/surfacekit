@@ -718,9 +718,7 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
           const isWidthTransition = !props.width && props.transition?.['width'];
           const isAnimatingSize = isHeightTransition || isWidthTransition;
           const isSizeAnimated = !props.disableLayoutTransitions && isAnimatingSize && !!props.children;
-
           const isAnimatingPresence = props.transition?.['children'];
-
           const presenceParentRef = isSizeAnimated ? useAnimatedRef<any>() : animatedRef;
 
           const correctChildren = props.asChild ? props.children: props.children;
