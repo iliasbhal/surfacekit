@@ -31,7 +31,7 @@ import {
 } from "./lib/useComponentOverrides";
 import { OrientationProvider, useDeviceOrientation } from "./lib/useDeviceOrientation";
 import { useMediaQuery } from "./lib/useMediaQuery";
-import { ScreenDimensionProvider } from "./ScreenDimension";
+import { ScreenDimensionProvider, useScreenDimensions } from "./ScreenDimension";
 import { createViewBase } from "./createViewBase";
 import { createTextBase } from "./createTextBase";
 import { AnimateLayoutSize } from "./AnimateLayoutSize";
@@ -829,6 +829,7 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
     useFonts: useFonts,
     useOrientation: useDeviceOrientation,
     useMediaQuery: useMediaQuery,
+    useScreenDimensions: useScreenDimensions,
     Provider: ThemeProvider,
 
     useVariantStyle: (component: StylableComponent, variant: string, value: any) => {
