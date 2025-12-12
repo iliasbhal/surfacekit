@@ -93,6 +93,11 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
     return context;
   };
 
+  const EnsureFontsLoaded = () => {
+    useFonts();
+    return null;
+  }
+
   const ThemeProvider: React.FC<PropsWithChildren<{ theme: ThemeValue }>> = (
     props,
   ) => {
@@ -100,6 +105,7 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
       <ScreenDimensionProvider>
         <OrientationProvider>
           <surfaceContext.Provider value={props.theme}>
+            <EnsureFontsLoaded />
             {props.children}
           </surfaceContext.Provider>
         </OrientationProvider>
