@@ -10,6 +10,7 @@
   "module": "./dist/index.js",
   "types": "./src/index.ts",
   "scripts": {
+    "dev": "cd example && yarn web",
     "build": "tsup",
     "playground": "tsx scripts/index.tsx",
     "test": "jest --watchAll"
