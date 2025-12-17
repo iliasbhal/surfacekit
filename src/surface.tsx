@@ -25,10 +25,9 @@ import { deepAssign } from "./lib/deepAssign";
 import { getAnimatedComp } from "./lib/getAnimatedComponent";
 import { TransitionProp, useAnimatedStylesheet } from "./lib/useAnimatedStyle";
 import {
-  Interaction,
-  InteractionState,
   useComponentOverrides,
 } from "./lib/useComponentOverrides";
+import { InteractionState, InteractionStateProvider } from './lib/Group'
 import { OrientationProvider, useDeviceOrientation } from "./lib/useDeviceOrientation";
 import { useMediaQuery } from "./lib/useMediaQuery";
 import { ScreenDimensionProvider, useScreenDimensions } from "./ScreenDimension";
@@ -36,10 +35,6 @@ import { createViewBase } from "./createViewBase";
 import { createTextBase } from "./createTextBase";
 import { AnimateLayoutSize } from "./AnimateLayoutSize";
 import { AnimateLayoutPosition } from "./AnimateLayoutPosition";
-
-export {
-  Interaction,
-} from "./lib/useComponentOverrides";
 
 export interface SurfaceTheme extends Record<string, any> {
   fonts: Record<string, Record<string, any>>
@@ -92,6 +87,7 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
     const context = React.useContext<ThemeValue>(surfaceContext);
     return context;
   };
+
 
   const EnsureFontsLoaded = () => {
     useFonts();
@@ -522,7 +518,7 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
             entering?: BaseAnimationBuilder;
             exiting?: BaseAnimationBuilder;
 
-            stateId?: string;
+            id?: string;
             overrides?: (state: InteractionState) => any;
         }
 
@@ -541,10 +537,10 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
           const styles = styleManager.getStylesheetForTheme(theme);
           const compRef = React.useRef<T>(null);
 
-          // if there is a `stateId` in props, we will setup
+          // if there is a `id` in props, we will setup
           // the gestures and focus props by default. This is to simplify
           // avoid implementing a more complex tracking of what has to needs to be setup.
-          // Most probably, if there is a stateId, it means that those gestures a
+          // Most probably, if there is a groupId, it means that those gestures a
           // re going to be used.
           const overridesHanlder = useComponentOverrides(props);
 
@@ -653,10 +649,6 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
             }
           }
 
-          if ("stateId" in nextProps) {
-            delete nextProps.stateId;
-          }
-
           if ('asChild' in nextProps) {
             delete nextProps.asChild;
           }
@@ -707,9 +699,7 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
 
           const isAnimated = !!(hasAnimatedHook || props.entering || props.exiting || props.as);
           const rootComponent = getRootComponent(
-            props.as 
-            || (props.asChild ? props.children.type: null)
-            ||  Component
+            props.as ||  Component
           );
           const ComponentToRender = isAnimated ? getAnimatedComp(rootComponent) : rootComponent;
 
@@ -724,8 +714,7 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
           const isAnimatingPresence = props.transition?.['children'];
           const presenceParentRef = isSizeAnimated ? useAnimatedRef<any>() : animatedRef;
 
-          const correctChildren = props.asChild ? props.children: props.children;
-          const children = conditionalWrap(correctChildren, [
+          const children = conditionalWrap(props.children, [
             isAnimatingPresence && ((props) => (
               <AnimatePresence parentRef={presenceParentRef}>
                 {props.children}
@@ -771,14 +760,14 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
                 transition={props.transition?.['position']}
               />
             )),
-            componentProps.gesture && ((props) => (
-              <GestureDetector gesture={componentProps.gesture} {...props}/>
+            componentProps.gesture && ((p) => (
+              <GestureDetector gesture={componentProps.gesture} {...p}/>
             )),
-            props.stateId && ((props) => (
-              <Interaction.Provider
-                stateId={props.stateId}
+            props.id && ((p) => (
+              <InteractionStateProvider
+                groupId={props.id}
                 state={overridesHanlder.getOverrideContext(presence)}
-                children={props.children}
+                children={p.children}
               />
             )),
           ]);

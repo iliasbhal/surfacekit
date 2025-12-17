@@ -2,54 +2,12 @@ import React from "react";
 import { Gesture, GestureType } from "react-native-gesture-handler";
 import { AnimatePresenceContextValue } from "../AnimatePresence";
 import { useRerenderRef } from "./useRerenderRef";
-
-const InteractionStateContext = React.createContext<any>(null);
+import { useInteractionStateContext } from "./Group";
 
 export type GestureState = ReturnType<typeof useComponentOverrides>;
-export type InteractionState = ReturnType<GestureState["getOverrideContext"]>;
-
-const InteractionStateProvider = (
-  props: React.PropsWithChildren<{ stateId: string; state: InteractionState }>,
-) => {
-  const parentContext = React.useContext(InteractionStateContext) || {};
-
-  return (
-    <InteractionStateContext.Provider
-      value={{
-        ...parentContext,
-        [props.stateId]: props.state,
-      }}
-    >
-      {props.children}
-    </InteractionStateContext.Provider>
-  );
-};
-
-const useInteractionStateContext = (config: { stateId: string }) => {
-  const parentContext = React.useContext(InteractionStateContext) || {};
-  const state = parentContext[config.stateId];
-  return state;
-};
-
-const InteractionStateInline = (
-  props: { stateId: string } & {
-    children: (state: InteractionState) => React.ReactNode;
-  },
-) => {
-  const state = useInteractionStateContext({ stateId: props.stateId });
-  return props.children(state);
-};
-
-export const Interaction = Object.assign(
-  {},
-  {
-    Provider: InteractionStateProvider,
-    Inline: InteractionStateInline,
-  },
-);
 
 export const useComponentOverrides = (props: any) => {
-  const defaultActive = props.stateId ? true : false;
+  const defaultActive = props.id ? true : false;
 
   const { current, rerender } = useRerenderRef(() => ({
     activateGesture: false,
@@ -63,6 +21,10 @@ export const useComponentOverrides = (props: any) => {
 
     getOverrideContext: (presence: AnimatePresenceContextValue) => {
       return {
+        of(id: string) {
+          const state = useInteractionStateContext({ groupId: id })
+          return state;
+        },
         get entered() {
           return presence?.entered;
         },

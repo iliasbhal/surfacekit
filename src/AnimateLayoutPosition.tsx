@@ -1,17 +1,12 @@
 import React, { RefObject } from 'react';
-import { AnimatedRef, measure, useAnimatedRef, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { AnimatedRef, interpolate, measure, useAnimatedRef, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useLayoutSize } from './lib/useLayoutSize';
-import { LayoutChangeEvent } from 'react-native';
+import { LayoutChangeEvent, findNodeHandle } from 'react-native';
 import { animateToValue } from './lib/defaultAnimations';
 
-interface LayoutMeasure {
-  x: number;
-  y: number;
-}
-
-
+type Measurment = Exclude<ReturnType<typeof measure>, null>
 const useTrackPosition = (trackRef: AnimatedRef<any>, debugId?: string) => {
-  const [position, setPosition] = React.useState<Partial<LayoutMeasure>>({})
+  const [position, setPosition] = React.useState<Measurment>({} as any)
 
   const onLayout = (event?: LayoutChangeEvent) => {
     const trackMeasure = measure(trackRef)!;
@@ -24,11 +19,9 @@ const useTrackPosition = (trackRef: AnimatedRef<any>, debugId?: string) => {
     const hasLayoutChanged = !!(anchorLayoutChanged);
     if (!hasLayoutChanged) return;
 
-    setPosition({
-      x: trackMeasure.x,
-      y: trackMeasure.y,
-    })
+    setPosition(trackMeasure);
   }
+
   
   React.useLayoutEffect(onLayout);
   // React.useEffect(onLayout);
@@ -59,47 +52,9 @@ export const AnimateLayoutPosition : React.FC<React.PropsWithChildren<AnimateLay
   const isTrackRendered = typeof trackPosition.position.x === 'number'
     && typeof trackPosition.position.y === 'number';
 
-
-
-  // When first animating, we should just set the new value,
-  // and then animate on subsequent updates.
-  const translateX = useSharedValue(0);
-  const translateY = useSharedValue(0);
-  const currentTranslateRef = React.useRef({ x: 0, y: 0 });
-
-  React.useLayoutEffect(() => {
-    if (!isTrackRendered) {
-      const nextX = applyPosition.position?.x ?? 0;
-      const nextY = applyPosition.position?.y ?? 0;
-
-      const isXChanged = currentTranslateRef.current.x !== nextX;
-      const isYChanged = currentTranslateRef.current.y !== nextY;
-      if (isXChanged || isYChanged) {
-        translateX.value = nextX;
-        translateY.value = nextY;
-        currentTranslateRef.current.x = nextX;
-        currentTranslateRef.current.y = nextY;
-      }
-
-      return
-    }
-
-    const nextX = trackPosition.position?.x ?? 0;
-    const nextY = trackPosition.position?.y ?? 0;
-
-    const isXChanged = currentTranslateRef.current.x !== nextX;
-    const isYChanged = currentTranslateRef.current.y !== nextY;
-    if (isXChanged || isYChanged) {
-      translateX.value = animateToValue(nextX, props.transition);
-      translateY.value = animateToValue(nextY, props.transition);
-      currentTranslateRef.current.x = nextX;
-      currentTranslateRef.current.y = nextY;
-    }
-  });
-
-
   const child = React.Children.only(props.children) as any;
 
+  const anchor : Record<string, any> = {};
   const positionStyle = child.props.style.map((style: any) => {
     const isAnimatedStyle = style.viewDescriptors;
     if (isAnimatedStyle) {
@@ -113,6 +68,12 @@ export const AnimateLayoutPosition : React.FC<React.PropsWithChildren<AnimateLay
       'marginLeft','marginRight', 'marginHorizontal', 'marginVertical'
     ];
 
+    if (style.position) anchor.position = style.position;
+    if (style.top) anchor.top = style.top;
+    if (style.left) anchor.left = style.left;
+    if (style.right) anchor.right = style.right;
+    if (style.bottom) anchor.bottom = style.bottom;
+
     positionAttrs.forEach(attr => {
       // Only copy if the value is defined (for margins)
       if (style[attr] !== undefined) {
@@ -123,16 +84,81 @@ export const AnimateLayoutPosition : React.FC<React.PropsWithChildren<AnimateLay
     return positionStyle;
   });
 
+  // When first animating, we should just set the new value,
+  // and then animate on subsequent updates.
+  const left = useSharedValue(0);
+  const top = useSharedValue(0);
+  const right = useSharedValue(0);
+  const bottom = useSharedValue(0);
+  const currentTranslateRef = React.useRef({ x: 0, y: 0 });
+
+  React.useLayoutEffect(() => {
+    const nextPosition = !isTrackRendered 
+      ? applyPosition.position
+      : trackPosition.position;
+
+    const nextLeft = nextPosition?.x ?? 0;
+    const nextTop = nextPosition?.y ?? 0;
+    const nextRight = nextLeft + nextPosition?.width;
+    const nextBottom = nextTop + nextPosition?.height;
+
+    const isXChanged = currentTranslateRef.current.x !== nextLeft;
+    const isYChanged = currentTranslateRef.current.y !== nextTop;
+
+    if (!isTrackRendered) {
+      if (isXChanged || isYChanged) {
+        left.value = nextLeft;
+        top.value = nextTop;
+        right.value = nextRight;
+        bottom.value = nextBottom;
+
+        currentTranslateRef.current.x = nextLeft;
+        currentTranslateRef.current.y = nextTop;
+      }
+
+      return
+    }
+
+    if (isXChanged || isYChanged) {
+      left.value = animateToValue(nextLeft, props.transition);
+      top.value = animateToValue(nextTop, props.transition);
+      right.value = animateToValue(nextRight, props.transition);
+      bottom.value = animateToValue(nextBottom, props.transition);
+      currentTranslateRef.current.x = nextLeft;
+      currentTranslateRef.current.y = nextTop;
+    }
+  });
+
   const animatedPositionStyle = useAnimatedStyle(() => {
     if (!isTrackRendered) {
       return {};
     }
 
-    return {
-      left: translateX.value,
-      top: translateY.value,
+    const trackPos = trackPosition.position;
+    const position : Record<string, number | 'unset'> = {};
+
+    // We need to compute the position of the child based on the anchor and the position of the track
+    // To ensure that when animating width, the anchor stays in place.
+
+    if (anchor.right) {
+      position.left = 'unset';
+      position.right = (trackPos.x + trackPos.width - right.value) + anchor.right;
+    } else {
+      position.right = 'unset';
+      position.left = left.value;
     }
-  }, [isTrackRendered])
+
+    if (anchor.bottom) {
+      position.top = 'unset';
+      position.bottom = (trackPos.y + trackPos.height - bottom.value) + anchor.bottom;
+    } else {
+      position.top = top.value;
+      position.bottom = 'unset';
+    }
+
+    return position;
+  })
+
 
   // We render in two steps.
   // 1st render is to display the component normaly
@@ -152,10 +178,12 @@ export const AnimateLayoutPosition : React.FC<React.PropsWithChildren<AnimateLay
           ...positionStyle,
           sizeTracker.size,
           {
-            opacity: 0,
             // position: 'relative',
             zIndex: -1,
-            backgroundColor: 'transparent'
+            opacity: 0,
+            backgroundColor: 'transparent',
+            // opacity: .5,
+            // backgroundColor: 'red'
           }
         ]}
       />
@@ -175,6 +203,7 @@ export const AnimateLayoutPosition : React.FC<React.PropsWithChildren<AnimateLay
         { zIndex: 1 },
         ...child.props.style,
         animatedPositionStyle,
+        // {opacity: .5},
         isSizeMeasured && {
           position: 'absolute',
         }
