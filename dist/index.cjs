@@ -14,6 +14,11 @@ var React12__default = /*#__PURE__*/_interopDefault(React12);
 var Animated__default = /*#__PURE__*/_interopDefault(Animated);
 
 // src/surface.tsx
+var ANIMATE_PRESENCE_PROPS_KEY = "__AnimatePresenceProps__";
+var getAnimatedPresenceProps = (props) => {
+  const animtePresencProps = props[ANIMATE_PRESENCE_PROPS_KEY] || {};
+  return animtePresencProps;
+};
 var AnimatePresenceContext = React12__default.default.createContext(null);
 var AnimatePresence = (props) => {
   const mode = props.mode || "sync";
@@ -252,8 +257,10 @@ var getAnimatedComp = (comp) => {
 var Natural = (value, callback) => Animated.withTiming(
   value,
   {
-    duration: 2e3,
+    duration: 200,
     easing: Animated.Easing.bezier(0.25, 0.1, 0.25, 1),
+    // easing: Easing.out(Easing.quad),
+    // easing: Easing.,
     reduceMotion: Animated.ReduceMotion.System
   },
   callback
@@ -284,7 +291,7 @@ function useDynamicSharedValues() {
     },
     target(name, next) {
       ref[name].previous = ref[name].next;
-      ref[name].next = next;
+      ref[name].next = typeof next === "number" ? Math.round(next) : next;
       const hasChanged = ref[name].previous !== ref[name].next;
       return hasChanged;
     },
@@ -383,6 +390,7 @@ var useAnimatedStylesheet = (compRef, componentProps, presence, originalProps) =
   componentProps.animation;
   delete componentProps.transition;
   delete componentProps.animation;
+  delete componentProps.overrides;
   const styleProp = componentProps.style;
   const sharedValues = useDynamicSharedValues();
   const animationKeys = Object.keys(transition || {});
@@ -391,6 +399,7 @@ var useAnimatedStylesheet = (compRef, componentProps, presence, originalProps) =
   const animateProperty = (key, initial, next) => {
     remainingAnimatedProperties.delete(key);
     sharedValues.init(key, initial);
+    const hasChanged = sharedValues.target(key, next);
     state.animationEffects.set(key, () => {
       const isAnimating = state.pendingTransitions.length > 0;
       if (!isAnimating) {
@@ -399,10 +408,16 @@ var useAnimatedStylesheet = (compRef, componentProps, presence, originalProps) =
       const promiseCtl = createControlledPromise();
       const transitionConfig = transition[key];
       compiledStyle.transitionDelay || 0;
-      const callback = () => {
-        reactNativeWorklets.scheduleOnRN(() => promiseCtl.complete());
-      };
-      sharedValues.set(key, animateToValue(next, transitionConfig, callback));
+      const onAnimationEnd = () => promiseCtl.complete();
+      console.log("animate", originalProps.debugId, hasChanged, key, next);
+      if (hasChanged) {
+        sharedValues.set(key, animateToValue(next, transitionConfig, () => {
+          "worklet";
+          reactNativeWorklets.runOnJS(onAnimationEnd)();
+        }));
+      } else {
+        onAnimationEnd();
+      }
       state.pendingTransitions.push(promiseCtl.promise);
       const totalAnimationsCount = state.pendingTransitions.length;
       Promise.all(state.pendingTransitions).then(() => {
@@ -412,7 +427,7 @@ var useAnimatedStylesheet = (compRef, componentProps, presence, originalProps) =
       });
     });
   };
-  React12__default.default.useLayoutEffect(() => {
+  React12__default.default.useEffect(() => {
     Array.from(state.animationEffects.values()).forEach((startAnimation) => startAnimation());
     state.animationEffects.clear();
   });
@@ -458,6 +473,7 @@ var useAnimatedStylesheet = (compRef, componentProps, presence, originalProps) =
       const isTransform = key in defaultTransforms;
       if (!isTransform) {
         style[key] = sharedValue.value;
+        continue;
       }
       if (!style.transform) {
         style.transform = [];
@@ -470,25 +486,30 @@ var useAnimatedStylesheet = (compRef, componentProps, presence, originalProps) =
   });
   styleProp.push(animatedStyle);
   if (presence?.presenceRef) {
-    const [detachStyle, setDetachStyle] = React12__default.default.useState(null);
-    React12__default.default.useLayoutEffect(() => {
-      if (detachStyle) return;
-      if (!componentProps.detach) return;
-      const wrapperRef = Animated.measure(presence.presenceRef);
-      const currentRect = Animated.measure(compRef);
-      const distanceX = currentRect?.pageX - wrapperRef?.pageX;
-      const distanceY = currentRect?.pageY - wrapperRef?.pageY;
-      setDetachStyle({
-        distanceX: distanceX ?? 0,
-        distanceY: distanceY ?? 0
-      });
-    });
-    if (componentProps.detach && detachStyle) {
-      styleProp.push({
+    const prevOnLayout = componentProps.onLayout;
+    const distanceX = Animated.useSharedValue(0);
+    const distanceY = Animated.useSharedValue(0);
+    componentProps.onLayout = (event) => {
+      prevOnLayout?.(event);
+      const layout = event.nativeEvent.layout;
+      if (!layout) return;
+      distanceX.value = layout.x;
+      distanceY.value = layout.y;
+    };
+    const detachStyle = Animated.useAnimatedStyle(() => {
+      console.log("DETACH STYLE", {
         position: "absolute",
-        top: detachStyle.distanceY,
-        left: detachStyle.distanceX
+        left: distanceX.value,
+        top: distanceY.value
       });
+      return {
+        position: "absolute",
+        left: distanceX.value,
+        top: distanceY.value
+      };
+    });
+    if (componentProps.detach) {
+      styleProp.push(detachStyle);
     }
   }
 };
@@ -504,40 +525,24 @@ var useRerenderRef = (initialValue) => {
     rerender: () => rerender((prev) => ({ ...prev }))
   };
 };
-
-// src/lib/useComponentOverrides.tsx
 var InteractionStateContext = React12__default.default.createContext(null);
 var InteractionStateProvider = (props) => {
   const parentContext = React12__default.default.useContext(InteractionStateContext) || {};
-  return /* @__PURE__ */ React12__default.default.createElement(
-    InteractionStateContext.Provider,
-    {
-      value: {
-        ...parentContext,
-        [props.stateId]: props.state
-      }
-    },
-    props.children
-  );
+  const nextContext = {
+    ...parentContext,
+    [props.groupId]: props.state
+  };
+  return /* @__PURE__ */ React12__default.default.createElement(InteractionStateContext.Provider, { value: nextContext }, props.children);
 };
 var useInteractionStateContext = (config) => {
   const parentContext = React12__default.default.useContext(InteractionStateContext) || {};
-  const state = parentContext[config.stateId];
+  const state = parentContext[config.groupId];
   return state;
 };
-var InteractionStateInline = (props) => {
-  const state = useInteractionStateContext({ stateId: props.stateId });
-  return props.children(state);
-};
-var Interaction = Object.assign(
-  {},
-  {
-    Provider: InteractionStateProvider,
-    Inline: InteractionStateInline
-  }
-);
+
+// src/lib/useComponentOverrides.tsx
 var useComponentOverrides = (props) => {
-  const defaultActive = props.stateId ? true : false;
+  const defaultActive = props.id ? true : false;
   const { current, rerender } = useRerenderRef(() => ({
     activateGesture: false,
     activateFocus: false,
@@ -548,6 +553,10 @@ var useComponentOverrides = (props) => {
     isFocused: false,
     getOverrideContext: (presence) => {
       return {
+        of(id) {
+          const state = useInteractionStateContext({ groupId: id });
+          return state;
+        },
         get entered() {
           return presence?.entered;
         },
@@ -1875,157 +1884,374 @@ var createTextBase = (rawTheme) => {
     }
   };
 };
-var useLayoutSize = (elementRef) => {
-  const [size, setSize] = React12__default.default.useState(null);
-  const onLayoutChange = (layout) => {
-    const hasChanged = size?.height !== layout.height || size?.width !== layout.width;
-    if (!hasChanged) {
-      return;
-    }
-    setSize(layout);
-  };
-  const onLayout = (event) => {
-    const nextWidth = event.nativeEvent.layout.width;
-    const nextHeight = event.nativeEvent.layout.height;
-    onLayoutChange({
-      width: nextWidth,
-      height: nextHeight
-    });
-  };
-  React12__default.default.useLayoutEffect(() => {
-    const elementRect = Animated.measure(elementRef);
-    if (!elementRect) return;
-    onLayoutChange({
-      width: elementRect?.width,
-      height: elementRect.height
-    });
-  });
-  return {
-    size,
-    onLayout
-  };
-};
-
-// src/AnimateLayoutSize.tsx
 var AnimateLayoutSize = (props) => {
   const { View } = props;
   const trackRef = props.innerRef || Animated.useAnimatedRef();
-  const { size, onLayout } = useLayoutSize(trackRef);
+  const animatedSize = useTransitionedSize({
+    elementRef: trackRef,
+    transition: props.transition
+  });
   const animateHeight = props.animateHeight || false;
   const animateWidth = props.animateWidth || false;
-  const applyProps = !size ? {
-    transition: {}
-  } : {
-    // width: trackLayout.targetMeasure?.width,
-    height: animateHeight ? size?.height : "100%",
-    width: animateWidth ? size?.width : "100%",
-    transition: {
-      height: animateHeight,
-      width: animateWidth
-    }
-  };
-  const trackProps = !size ? {} : {
-    absolute: true,
-    top: 0,
-    left: 0,
-    height: animateWidth ? animateHeight ? void 0 : "100%" : void 0,
-    width: animateHeight ? animateWidth ? void 0 : "100%" : void 0
-  };
+  const applyStyle = Animated.useAnimatedStyle(() => {
+    return {
+      height: animateHeight ? animatedSize.ui?.height.value : "100%",
+      width: animateWidth ? animatedSize.ui?.width.value : "100%"
+    };
+  });
   const getStyle = (attribute2) => {
     return props.innerProps.style?.[attribute2] || props.innerProps.style.findLast((style) => style[attribute2])?.[attribute2];
   };
-  const gap = getStyle("gap");
-  const flexDirection = getStyle("flexDirection");
   return /* @__PURE__ */ React12__default.default.createElement(
     View,
     {
       key: "apply",
       relative: true,
       overflowHidden: true,
+      debugId: "animateSize",
       disableLayoutTransitions: true,
-      ...applyProps
+      style: [
+        animatedSize.isInitialized && applyStyle
+      ]
     },
     /* @__PURE__ */ React12__default.default.createElement(
       View,
       {
         key: "track",
-        onLayout,
+        onLayout: animatedSize.onLayout,
         ref: trackRef,
-        ...trackProps,
-        flexDirection,
-        gap
+        flexDirection: getStyle("flexDirection"),
+        gap: getStyle("gap"),
+        overrides: [
+          animatedSize.isInitialized && {
+            absolute: true,
+            top: 0,
+            left: 0,
+            height: animateWidth ? animateHeight ? void 0 : "100%" : void 0,
+            width: animateHeight ? animateWidth ? void 0 : "100%" : void 0
+          }
+        ]
       },
       props.children
     )
   );
 };
-var useTrackPosition = (trackRef, debugId) => {
-  const [position, setPosition] = React12__default.default.useState({});
-  const onLayout = (event) => {
-    const trackMeasure = Animated.measure(trackRef);
-    const canCompute = !!trackMeasure;
-    if (!canCompute) return;
-    const anchorMovedX = position?.x !== trackMeasure.x;
-    const anchorMovedY = position?.y !== trackMeasure.y;
-    const anchorLayoutChanged = anchorMovedX || anchorMovedY;
-    const hasLayoutChanged = !!anchorLayoutChanged;
-    if (!hasLayoutChanged) return;
-    setPosition({
-      x: trackMeasure.x,
-      y: trackMeasure.y
-    });
-  };
-  React12__default.default.useLayoutEffect(onLayout);
-  return {
-    onLayout,
-    position
-  };
+var INITIAL = {
+  __hasChanged: false,
+  width: 0,
+  height: 0
 };
-var AnimateLayoutPosition = (props) => {
-  const { View, transition } = props;
-  const trackRef = Animated.useAnimatedRef();
-  const applyRef = Animated.useAnimatedRef();
-  const sizeTracker = useLayoutSize(applyRef);
-  const isSizeMeasured = !!sizeTracker.size;
-  const trackPosition = useTrackPosition(trackRef, props.debugId);
-  const applyPosition = useTrackPosition(applyRef, props.debugId);
-  const isTrackRendered = typeof trackPosition.position.x === "number" && typeof trackPosition.position.y === "number";
-  const translateX = Animated.useSharedValue(0);
-  const translateY = Animated.useSharedValue(0);
-  const currentTranslateRef = React12__default.default.useRef({ x: 0, y: 0 });
-  React12__default.default.useLayoutEffect(() => {
-    if (!isTrackRendered) {
-      const nextX2 = applyPosition.position?.x ?? 0;
-      const nextY2 = applyPosition.position?.y ?? 0;
-      const isXChanged2 = currentTranslateRef.current.x !== nextX2;
-      const isYChanged2 = currentTranslateRef.current.y !== nextY2;
-      if (isXChanged2 || isYChanged2) {
-        translateX.value = nextX2;
-        translateY.value = nextY2;
-        currentTranslateRef.current.x = nextX2;
-        currentTranslateRef.current.y = nextY2;
-      }
+var useTransitionedSize = (config) => {
+  const [_, rerender] = React12__default.default.useState({});
+  const lastValues = React12__default.default.useRef({ ...INITIAL });
+  const trackTarget = (target) => {
+    lastValues.current.__hasChanged = true;
+    lastValues.current.width = target.width;
+    lastValues.current.height = target.height;
+  };
+  const ui = {
+    width: Animated.useSharedValue(INITIAL.width),
+    height: Animated.useSharedValue(INITIAL.height)
+  };
+  const updateValue = React12__default.default.useCallback((target) => {
+    const isInitialized2 = !!lastValues.current.__hasChanged;
+    const widthChanged = target.width !== lastValues.current.width;
+    const heightChanged = target.height !== lastValues.current.height;
+    if (!isInitialized2) {
+      trackTarget(target);
+      ui.width.value = target.width;
+      ui.height.value = target.height;
+      rerender({});
       return;
     }
-    const nextX = trackPosition.position?.x ?? 0;
-    const nextY = trackPosition.position?.y ?? 0;
-    const isXChanged = currentTranslateRef.current.x !== nextX;
-    const isYChanged = currentTranslateRef.current.y !== nextY;
-    if (isXChanged || isYChanged) {
-      translateX.value = animateToValue(nextX, props.transition);
-      translateY.value = animateToValue(nextY, props.transition);
-      currentTranslateRef.current.x = nextX;
-      currentTranslateRef.current.y = nextY;
-    }
+    trackTarget(target);
+    if (heightChanged) ui.height.value = animateToValue(target.height, config.transition);
+    if (widthChanged) ui.width.value = animateToValue(target.width, config.transition);
+  }, []);
+  const getTargetFromLayout = (event, debugId) => {
+    "worklet";
+    const layout = event.nativeEvent.layout;
+    const nextWidth = Math.round(layout.width);
+    const nextHeight = Math.round(layout.height);
+    return {
+      width: nextWidth,
+      height: nextHeight
+    };
+  };
+  const onLayout = (event) => {
+    const target = getTargetFromLayout(event);
+    updateValue(target);
+  };
+  React12__default.default.useLayoutEffect(() => {
+    if (!config.elementRef) return;
+    const measured = Animated.measure(config.elementRef);
+    if (!measured) return;
+    const event = {
+      nativeEvent: {
+        layout: {
+          width: measured.width,
+          height: measured.height,
+          x: measured.x,
+          y: measured.y
+        }
+      }
+    };
+    const target = getTargetFromLayout(event);
+    updateValue(target);
   });
+  const isInitialized = !!lastValues.current.__hasChanged;
+  return {
+    isInitialized,
+    onLayout,
+    ui
+  };
+};
+var useAnimatedLayoutSize = (elementRef, debugId) => {
+  const [initialSize, setInitialSize] = React12__default.default.useState(null);
+  const sizeRef = React12__default.default.useRef({ width: 0, height: 0 });
+  const width = Animated.useSharedValue(sizeRef.current.width);
+  const height = Animated.useSharedValue(sizeRef.current.height);
+  const onLayout = (event) => {
+    const nextWidth = Math.round(event.nativeEvent.layout.width);
+    const nextHeight = Math.round(event.nativeEvent.layout.height);
+    const hasChanged = sizeRef.current.width !== nextWidth || sizeRef.current.height !== nextHeight;
+    if (!hasChanged) return;
+    sizeRef.current.width = nextWidth;
+    sizeRef.current.height = nextHeight;
+    width.value = nextWidth;
+    height.value = nextHeight;
+    if (initialSize) return;
+    setInitialSize({
+      width: nextWidth,
+      height: nextHeight
+    });
+  };
+  React12__default.default.useLayoutEffect(() => {
+    if (!elementRef) return;
+    const elementRect = Animated.measure(elementRef);
+    if (!elementRect) return;
+    onLayout({
+      nativeEvent: {
+        layout: {
+          width: elementRect?.width,
+          height: elementRect.height
+        }
+      }
+    });
+  });
+  const animatedSizeStyle = Animated.useAnimatedStyle(() => {
+    return {
+      width: width.value,
+      height: height.value
+    };
+  });
+  return {
+    ui: {
+      width,
+      height
+    },
+    style: [
+      initialSize,
+      initialSize && animatedSizeStyle
+    ],
+    initialSize,
+    animatedSizeStyle,
+    onLayout
+  };
+};
+
+// src/AnimateLayoutPosition.tsx
+var AnimateLayoutPosition = (props) => {
+  const { View } = props;
   const child = React12__default.default.Children.only(props.children);
-  const positionStyle = child.props.style.map((style) => {
+  const trackRef = Animated.useAnimatedRef();
+  const applyRef = Animated.useAnimatedRef();
+  const sizeTracker = useAnimatedLayoutSize(applyRef);
+  const anchor = useAnchorStyle(child.props);
+  const transition = useTransitionedPosition({
+    elementRef: trackRef,
+    transition: props.transition
+  });
+  const isSizeMeasured = !!sizeTracker.initialSize;
+  const anchorStyle = Animated.useAnimatedStyle(() => {
+    const position = {};
+    if (!isSizeMeasured) return position;
+    const trackPos = Animated.measure(trackRef);
+    if (!trackPos) return position;
+    position.position = "absolute";
+    const isOppositeAnchorHorizontal = typeof anchor.ui.right.value === "number";
+    if (isOppositeAnchorHorizontal) {
+      const distance = trackPos.x + trackPos.width - transition.ui.right.value;
+      position.right = distance + anchor.ui.right.value;
+      position.left = "unset";
+    } else {
+      position.left = transition.ui.left.value;
+      position.right = "unset";
+    }
+    const isOppositeAnchorVertical = typeof anchor.ui.bottom.value === "number";
+    if (isOppositeAnchorVertical) {
+      const distance = trackPos.y + trackPos.height - transition.ui.bottom.value;
+      position.bottom = distance + anchor.ui.bottom.value;
+      position.top = "unset";
+    } else {
+      position.top = transition.ui.top.value;
+      position.bottom = "unset";
+    }
+    return position;
+  });
+  return [
+    isSizeMeasured && /* @__PURE__ */ React12__default.default.createElement(
+      View,
+      {
+        key: "track",
+        ref: trackRef,
+        onLayout: (event) => {
+          transition.onLayout?.(event);
+        },
+        style: [
+          ...anchor.positionStyle,
+          ...sizeTracker.style,
+          {
+            // position: 'relative',
+            zIndex: -1,
+            opacity: 0,
+            backgroundColor: "transparent"
+            // opacity: .5,
+            // backgroundColor: 'red'
+          }
+        ]
+      }
+    ),
+    React12__default.default.cloneElement(child, {
+      key: "apply",
+      ...child.props,
+      ref: (ref) => {
+        child.props.ref?.(ref);
+        applyRef(ref);
+      },
+      onLayout: (event) => {
+        transition.onInitialLayout(event);
+        sizeTracker.onLayout(event);
+        child.props.onLayout?.(event);
+      },
+      style: [
+        { zIndex: 1 },
+        ...child.props.style,
+        transition.isInitialized && anchorStyle
+      ]
+    })
+  ];
+};
+var INITIAL2 = {
+  __hasChanged: false,
+  left: 0,
+  top: 0,
+  right: 0,
+  bottom: 0
+};
+var useTransitionedPosition = (config) => {
+  const [_, rerender] = React12__default.default.useState({});
+  const lastValues = React12__default.default.useRef({ ...INITIAL2 });
+  const trackTarget = (target) => {
+    lastValues.current.__hasChanged = true;
+    lastValues.current.left = target.left;
+    lastValues.current.right = target.right;
+    lastValues.current.bottom = target.bottom;
+    lastValues.current.top = target.top;
+  };
+  const ui = {
+    left: Animated.useSharedValue(INITIAL2.left),
+    top: Animated.useSharedValue(INITIAL2.top),
+    right: Animated.useSharedValue(INITIAL2.right),
+    bottom: Animated.useSharedValue(INITIAL2.bottom)
+  };
+  const updateValue = React12__default.default.useCallback((target) => {
+    const isInitialized2 = !!lastValues.current.__hasChanged;
+    if (!isInitialized2) {
+      trackTarget(target);
+      ui.left.value = target.left;
+      ui.top.value = target.top;
+      ui.bottom.value = target.bottom;
+      ui.right.value = target.right;
+      rerender({});
+      return;
+    }
+    const leftChanged = target.left !== lastValues.current.left;
+    const rightChanged = target.right !== lastValues.current.right;
+    const topChanged = target.top !== lastValues.current.top;
+    const bottomChanged = target.bottom !== lastValues.current.bottom;
+    trackTarget(target);
+    if (topChanged) ui.top.value = animateToValue(target.top, config.transition);
+    if (leftChanged) ui.left.value = animateToValue(target.left, config.transition);
+    if (rightChanged) ui.right.value = animateToValue(target.right, config.transition);
+    if (bottomChanged) ui.bottom.value = animateToValue(target.bottom, config.transition);
+  }, []);
+  const getTargetFromLayout = (event, debugId) => {
+    "worklet";
+    const layout = event.nativeEvent.layout;
+    const nextWidth = Math.round(layout.width);
+    const nextHeight = Math.round(layout.height);
+    const nextLeft = Math.round(layout.x);
+    const nextTop = Math.round(layout.y);
+    const nextRight = nextLeft + nextWidth;
+    const nextBottom = nextTop + nextHeight;
+    console.log("TRANSITION STYLE", debugId, [nextWidth, nextHeight, nextLeft, nextTop]);
+    return {
+      left: nextLeft,
+      top: nextTop,
+      right: nextRight,
+      bottom: nextBottom
+    };
+  };
+  const onInitialLayout = (event) => {
+    const isInitialized2 = !!lastValues.current.__hasChanged;
+    if (isInitialized2) return;
+    const target = getTargetFromLayout(event, "onInitialLayout");
+    updateValue(target);
+  };
+  const onLayout = (event) => {
+    const target = getTargetFromLayout(event, "onLayout");
+    updateValue(target);
+  };
+  React12__default.default.useLayoutEffect(() => {
+    if (!config.elementRef) return;
+    const measured = Animated.measure(config.elementRef);
+    if (!measured) return;
+    const event = {
+      nativeEvent: {
+        layout: {
+          width: measured.width,
+          height: measured.height,
+          x: measured.x,
+          y: measured.y
+        }
+      }
+    };
+    const target = getTargetFromLayout(event, "onLayout");
+    updateValue(target);
+  });
+  const isInitialized = !!lastValues.current.__hasChanged;
+  return {
+    isInitialized,
+    onInitialLayout,
+    onLayout,
+    ui
+  };
+};
+var useAnchorStyle = (props) => {
+  const anchorValues = React12__default.default.useRef({});
+  anchorValues.current = {};
+  const positionStyle = [];
+  const withoutPositionStyle = [];
+  props.style.map((style) => {
     const isAnimatedStyle = style.viewDescriptors;
     if (isAnimatedStyle) {
-      return style;
+      withoutPositionStyle.push(style);
+      return;
     }
-    const positionStyle2 = {};
-    const positionAttrs = [
+    const withPositionStyle = {};
+    const withoutPosStyle = {};
+    const positionAttrs = /* @__PURE__ */ new Set([
       "position",
       "top",
       "left",
@@ -2039,66 +2265,39 @@ var AnimateLayoutPosition = (props) => {
       "marginRight",
       "marginHorizontal",
       "marginVertical"
-    ];
-    positionAttrs.forEach((attr) => {
-      if (style[attr] !== void 0) {
-        positionStyle2[attr] = style[attr];
+    ]);
+    if (typeof style.top === "number") anchorValues.current.top = style.top;
+    if (typeof style.left === "number") anchorValues.current.left = style.left;
+    if (typeof style.right === "number") anchorValues.current.right = style.right;
+    if (typeof style.bottom === "number") anchorValues.current.bottom = style.bottom;
+    Object.entries(style).forEach(([attr, value]) => {
+      const isPos = positionAttrs.has(attr);
+      if (isPos) {
+        withPositionStyle[attr] = value;
+      } else {
+        withoutPosStyle[attr] = value;
       }
     });
-    return positionStyle2;
+    withoutPositionStyle.push(withoutPosStyle);
+    positionStyle.push(withPositionStyle);
   });
-  const animatedPositionStyle = Animated.useAnimatedStyle(() => {
-    if (!isTrackRendered) {
-      return {};
-    }
-    return {
-      left: translateX.value,
-      top: translateY.value
-    };
-  }, [isTrackRendered]);
-  return [
-    isSizeMeasured && /* @__PURE__ */ React12__default.default.createElement(
-      View,
-      {
-        key: "track",
-        ref: (ref) => {
-          trackRef(ref);
-          child.props.ref?.(ref);
-        },
-        onLayout: trackPosition.onLayout,
-        style: [
-          ...positionStyle,
-          sizeTracker.size,
-          {
-            opacity: 0,
-            // position: 'relative',
-            zIndex: -1,
-            backgroundColor: "transparent"
-          }
-        ]
-      }
-    ),
-    React12__default.default.cloneElement(child, {
-      key: "apply",
-      ...child.props,
-      ref: (ref) => {
-        applyRef(ref);
-        child.props.ref?.(ref);
-      },
-      onLayout: (event) => {
-        applyPosition?.onLayout?.(event);
-        child.props.onLayout?.(event);
-      },
-      style: [
-        { zIndex: 1 },
-        ...child.props.style,
-        animatedPositionStyle,
-        isSizeMeasured && {
-          position: "absolute"
-        }
-      ]
-    })
-  ];
+  const sharedAnchor = {
+    left: Animated.useSharedValue(0),
+    right: Animated.useSharedValue(0),
+    top: Animated.useSharedValue(0),
+    bottom: Animated.useSharedValue(0)
+  };
+  React12__default.default.useLayoutEffect(() => {
+    sharedAnchor.bottom.value = anchorValues.current.bottom ?? "unset";
+    sharedAnchor.left.value = anchorValues.current.left ?? "unset";
+    sharedAnchor.right.value = anchorValues.current.right ?? "unset";
+    sharedAnchor.top.value = anchorValues.current.top ?? "unset";
+  });
+  return {
+    ui: sharedAnchor,
+    positionStyle,
+    withoutPositionStyle
+  };
 };
 
 // src/surface.tsx
@@ -2106,13 +2305,13 @@ var getTypedTheme = (theme) => {
   const colors = theme.colors;
   const breakpoints = theme.breakpoints;
   const fontSizes = theme.fontSizes;
-  const size = theme.size;
+  const size2 = theme.size;
   const fonts = theme.fonts;
   return {
     colors,
     breakpoints,
     fontSizes,
-    size,
+    size: size2,
     fonts
   };
 };
@@ -2136,8 +2335,12 @@ var createSurfaced2 = () => {
     const context = React12__default.default.useContext(surfaceContext);
     return context;
   };
+  const EnsureFontsLoaded = () => {
+    useFonts();
+    return null;
+  };
   const ThemeProvider = (props) => {
-    return /* @__PURE__ */ React12__default.default.createElement(ScreenDimensionProvider, null, /* @__PURE__ */ React12__default.default.createElement(OrientationProvider, null, /* @__PURE__ */ React12__default.default.createElement(surfaceContext.Provider, { value: props.theme }, props.children)));
+    return /* @__PURE__ */ React12__default.default.createElement(ScreenDimensionProvider, null, /* @__PURE__ */ React12__default.default.createElement(OrientationProvider, null, /* @__PURE__ */ React12__default.default.createElement(surfaceContext.Provider, { value: props.theme }, /* @__PURE__ */ React12__default.default.createElement(EnsureFontsLoaded, null), props.children)));
   };
   const configByComponent = /* @__PURE__ */ new Map();
   const attrs = {
@@ -2479,12 +2682,6 @@ var createSurfaced2 = () => {
               trackTransform(variantStyle2);
             }
           }
-          if ("stateId" in nextProps) {
-            delete nextProps.stateId;
-          }
-          if ("asChild" in nextProps) {
-            delete nextProps.asChild;
-          }
           if (transformAcc) {
             styleProp.push({
               transform: Object.entries(
@@ -2509,7 +2706,9 @@ var createSurfaced2 = () => {
             useAnimatedStylesheet(
               animatedRef,
               componentProps,
-              presence);
+              presence,
+              props
+            );
           }
           customStylesFunctions.forEach((fn) => fn());
           overridesHanlder.applyFocusProps(componentProps);
@@ -2517,7 +2716,7 @@ var createSurfaced2 = () => {
           overridesHanlder.applyGestures(componentProps);
           const isAnimated = !!(hasAnimatedHook || props.entering || props.exiting || props.as);
           const rootComponent = getRootComponent(
-            props.as || (props.asChild ? props.children.type : null) || Component
+            props.as || Component
           );
           const ComponentToRender = isAnimated ? getAnimatedComp(rootComponent) : rootComponent;
           presence?.lifecycle?.onRender?.();
@@ -2528,8 +2727,7 @@ var createSurfaced2 = () => {
           const isSizeAnimated = !props.disableLayoutTransitions && isAnimatingSize && !!props.children;
           const isAnimatingPresence = props.transition?.["children"];
           const presenceParentRef = isSizeAnimated ? Animated.useAnimatedRef() : animatedRef;
-          const correctChildren = props.asChild ? props.children : props.children;
-          const children = conditionalWrap(correctChildren, [
+          const children = conditionalWrap(props.children, [
             isAnimatingPresence && ((props2) => /* @__PURE__ */ React12__default.default.createElement(AnimatePresence, { parentRef: presenceParentRef }, props2.children)),
             isSizeAnimated && ((props2) => /* @__PURE__ */ React12__default.default.createElement(
               AnimateLayoutSize,
@@ -2539,7 +2737,8 @@ var createSurfaced2 = () => {
                 innerRef: presenceParentRef,
                 children: props2.children,
                 animateHeight: isHeightTransition,
-                animateWidth: isWidthTransition
+                animateWidth: isWidthTransition,
+                transition: props2.transition?.["position"]
               }
             ))
           ]);
@@ -2570,13 +2769,13 @@ var createSurfaced2 = () => {
                 transition: props.transition?.["position"]
               }
             )),
-            componentProps.gesture && ((props2) => /* @__PURE__ */ React12__default.default.createElement(reactNativeGestureHandler.GestureDetector, { gesture: componentProps.gesture, ...props2 })),
-            props.stateId && ((props2) => /* @__PURE__ */ React12__default.default.createElement(
-              Interaction.Provider,
+            componentProps.gesture && ((p) => /* @__PURE__ */ React12__default.default.createElement(reactNativeGestureHandler.GestureDetector, { gesture: componentProps.gesture, ...p })),
+            props.id && ((p) => /* @__PURE__ */ React12__default.default.createElement(
+              InteractionStateProvider,
               {
-                stateId: props2.stateId,
+                groupId: props.id,
                 state: overridesHanlder.getOverrideContext(presence),
-                children: props2.children
+                children: p.children
               }
             ))
           ]);
@@ -2644,13 +2843,20 @@ var createSurfaced2 = () => {
   });
 };
 
+exports.ANIMATE_PRESENCE_PROPS_KEY = ANIMATE_PRESENCE_PROPS_KEY;
+exports.AnimatePresence = AnimatePresence;
+exports.AnimatePresenceContext = AnimatePresenceContext;
 exports.ContentSizing = ContentSizing;
 exports.Cursor = Cursor;
 exports.FlexDirection = FlexDirection;
-exports.Interaction = Interaction;
 exports.Position = Position;
+exports.ScreenDimensionProvider = ScreenDimensionProvider;
 exports.createSurfaced = createSurfaced2;
+exports.createTextBase = createTextBase;
 exports.createTheme = createTheme;
+exports.createViewBase = createViewBase;
+exports.getAnimatedPresenceProps = getAnimatedPresenceProps;
 exports.getTypedTheme = getTypedTheme;
+exports.useScreenDimensions = useScreenDimensions;
 //# sourceMappingURL=index.cjs.map
 //# sourceMappingURL=index.cjs.map
