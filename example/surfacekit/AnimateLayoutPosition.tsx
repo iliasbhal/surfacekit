@@ -1,43 +1,10 @@
 import React, { RefObject } from 'react';
-import { AnimatedRef, measure, useAnimatedRef, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
-import { useLayoutSize } from './lib/useLayoutSize';
-import { LayoutChangeEvent } from 'react-native';
+import { AnimatedRef, interpolate, measure, runOnJS, useAnimatedReaction, useAnimatedRef, useAnimatedStyle, useDerivedValue, useSharedValue, withSpring } from 'react-native-reanimated';
+import { useAnimatedLayoutSize, useLayoutSize } from './lib/useLayoutSize';
+import { LayoutChangeEvent, Platform, findNodeHandle } from 'react-native';
 import { animateToValue } from './lib/defaultAnimations';
-
-interface LayoutMeasure {
-  x: number;
-  y: number;
-}
-
-
-const useTrackPosition = (trackRef: AnimatedRef<any>, debugId?: string) => {
-  const [position, setPosition] = React.useState<Partial<LayoutMeasure>>({})
-
-  const onLayout = (event?: LayoutChangeEvent) => {
-    const trackMeasure = measure(trackRef)!;
-    const canCompute = !!(trackMeasure);
-    if (!canCompute) return;
-
-    const anchorMovedX = position?.x !== trackMeasure.x
-    const anchorMovedY =  position?.y !== trackMeasure.y;
-    const anchorLayoutChanged = anchorMovedX || anchorMovedY;
-    const hasLayoutChanged = !!(anchorLayoutChanged);
-    if (!hasLayoutChanged) return;
-
-    setPosition({
-      x: trackMeasure.x,
-      y: trackMeasure.y,
-    })
-  }
-  
-  React.useLayoutEffect(onLayout);
-  // React.useEffect(onLayout);
-
-  return {
-    onLayout,
-    position,
-  };
-}
+import { useAnimatedPosition, useTrackPosition } from './lib/useLayoutPosition';
+import { useDynamicSharedValues } from './lib/useDynamicSharedValues';
 
 interface AnimateLayoutPositionProps {
   debugId?: string;
@@ -46,93 +13,61 @@ interface AnimateLayoutPositionProps {
 }
 
 export const AnimateLayoutPosition : React.FC<React.PropsWithChildren<AnimateLayoutPositionProps>> = (props) => {
-  const { View, transition } = props;
-  
-  const trackRef = useAnimatedRef<any>();
-  const applyRef = useAnimatedRef<any>();
-  const sizeTracker = useLayoutSize(applyRef);
-  
-  const isSizeMeasured = !!sizeTracker.size;
-  const trackPosition = useTrackPosition(trackRef, props.debugId);
-  const applyPosition = useTrackPosition(applyRef, props.debugId);
-
-  const isTrackRendered = typeof trackPosition.position.x === 'number'
-    && typeof trackPosition.position.y === 'number';
-
-
-
-  // When first animating, we should just set the new value,
-  // and then animate on subsequent updates.
-  const translateX = useSharedValue(0);
-  const translateY = useSharedValue(0);
-  const currentTranslateRef = React.useRef({ x: 0, y: 0 });
-
-  React.useLayoutEffect(() => {
-    if (!isTrackRendered) {
-      const nextX = applyPosition.position?.x ?? 0;
-      const nextY = applyPosition.position?.y ?? 0;
-
-      const isXChanged = currentTranslateRef.current.x !== nextX;
-      const isYChanged = currentTranslateRef.current.y !== nextY;
-      if (isXChanged || isYChanged) {
-        translateX.value = nextX;
-        translateY.value = nextY;
-        currentTranslateRef.current.x = nextX;
-        currentTranslateRef.current.y = nextY;
-      }
-
-      return
-    }
-
-    const nextX = trackPosition.position?.x ?? 0;
-    const nextY = trackPosition.position?.y ?? 0;
-
-    const isXChanged = currentTranslateRef.current.x !== nextX;
-    const isYChanged = currentTranslateRef.current.y !== nextY;
-    if (isXChanged || isYChanged) {
-      translateX.value = animateToValue(nextX, props.transition);
-      translateY.value = animateToValue(nextY, props.transition);
-      currentTranslateRef.current.x = nextX;
-      currentTranslateRef.current.y = nextY;
-    }
-  });
-
-
+  const { View } = props;
   const child = React.Children.only(props.children) as any;
+  
+  const trackRef = useAnimatedRef();
+  const applyRef = useAnimatedRef();
 
-  const positionStyle = child.props.style.map((style: any) => {
-    const isAnimatedStyle = style.viewDescriptors;
-    if (isAnimatedStyle) {
-      return style;
-    }
+  const sizeTracker = useAnimatedLayoutSize(applyRef, 'sizeTracker');
+  const anchor = useAnchorStyle(child.props);
+  const transition = useTransitionedPosition({
+    elementRef: trackRef,
+    transition: props.transition,
+  });
+  
+  
+  const isSizeMeasured = !!sizeTracker.initialSize;
+
+  const anchorStyle = useAnimatedStyle(() => {
+    const position : Record<string, number | string> = {};
+    if (!isSizeMeasured) return position;
+
+    const trackPos = measure(trackRef!)
+    if (!trackPos) return position;
+
     
-    const positionStyle: Record<string, any> = {};
-    const positionAttrs = [
-      'position', 'top', 'left', 'right', 'bottom',
-      'transform', 'margin', 'marginTop', 'marginBottom', 
-      'marginLeft','marginRight', 'marginHorizontal', 'marginVertical'
-    ];
+    position.position = 'absolute';
+    
+    const isOppositeAnchorHorizontal = typeof anchor.ui.right.value === 'number';
+    if (isOppositeAnchorHorizontal) {
+      const distance = trackPos.x + trackPos.width - transition.ui.right.value;
+      position.right = distance + anchor.ui.right.value;
+      position.left = 'unset';
+    } else {
+      position.left = transition.ui.left.value;
+      position.right = 'unset';
+    }
+  
+    const isOppositeAnchorVertical = typeof anchor.ui.bottom.value === 'number';
+    if (isOppositeAnchorVertical) {
+      const distance = (trackPos.y + trackPos.height - transition.ui.bottom.value);
+      position.bottom = distance + anchor.ui.bottom.value;
+      position.top = 'unset';
+    } else {
+      position.top = transition.ui.top.value;
+      position.bottom = 'unset';
+    }
 
-    positionAttrs.forEach(attr => {
-      // Only copy if the value is defined (for margins)
-      if (style[attr] !== undefined) {
-        positionStyle[attr] = style[attr];
-      }
-    });
-
-    return positionStyle;
+    // console.log('REACTION STYLE', {
+    //   right: position.right,
+    //   left: position.left,
+    // })
+  
+    return position;
   });
 
-  const animatedPositionStyle = useAnimatedStyle(() => {
-    if (!isTrackRendered) {
-      return {};
-    }
-
-    return {
-      left: translateX.value,
-      top: translateY.value,
-    }
-  }, [isTrackRendered])
+  // console.log('RERENDER ANIMATE LAYOUT', anchorSide);
 
   // We render in two steps.
   // 1st render is to display the component normaly
@@ -143,19 +78,23 @@ export const AnimateLayoutPosition : React.FC<React.PropsWithChildren<AnimateLay
     isSizeMeasured && ( 
       <View
         key={"track"}
-        ref={(ref: any) => {
-          trackRef(ref);
-          child.props.ref?.(ref);
+        ref={trackRef}
+        onLayout={(event) => {
+          // if (rerenderIdRef.current.count === 0) {
+          //   rerenderIdRef.current.count++;
+            transition.onLayout?.(event);
+          // }
         }}
-        onLayout={trackPosition.onLayout}
         style={[
-          ...positionStyle,
-          sizeTracker.size,
+          ...anchor.positionStyle,
+          ...sizeTracker.style,
           {
-            opacity: 0,
             // position: 'relative',
             zIndex: -1,
-            backgroundColor: 'transparent'
+            opacity: 0,
+            backgroundColor: 'transparent',
+            // opacity: .5,
+            // backgroundColor: 'red'
           }
         ]}
       />
@@ -163,22 +102,201 @@ export const AnimateLayoutPosition : React.FC<React.PropsWithChildren<AnimateLay
     React.cloneElement(child, {
       key:"apply",
       ...child.props,
-      ref: (ref: any) => {
-        applyRef(ref);
+      ref: (ref) => {
         child.props.ref?.(ref);
+        applyRef(ref);
       },
       onLayout: (event: LayoutChangeEvent) => {
-        applyPosition?.onLayout?.(event);
+        transition.onInitialLayout(event);
+        sizeTracker.onLayout(event);
         child.props.onLayout?.(event);
       },
       style: [
         { zIndex: 1 },
-        ...child.props.style,
-        animatedPositionStyle,
-        isSizeMeasured && {
-          position: 'absolute',
-        }
+        ...child.props.style,        
+        transition.isInitialized && anchorStyle,
       ]
     })
   ];
+}
+
+const INITIAL = {
+  __hasChanged: false,
+  left: 0,
+  top: 0,
+  right: 0,
+  bottom: 0,
+}
+
+const useTransitionedPosition = (config: {elementRef: AnimatedRef<any>, transition: any}) => {
+  const [_, rerender] = React.useState({})
+  const lastValues = React.useRef({ ...INITIAL });
+  const trackTarget = (target: ReturnType<typeof getTargetFromLayout>) => {
+    lastValues.current.__hasChanged = true;
+    lastValues.current.left = target.left;
+    lastValues.current.right = target.right;
+    lastValues.current.bottom = target.bottom;
+    lastValues.current.top = target.top;
+  }
+
+  const ui = {
+    left:  useSharedValue(INITIAL.left),
+    top:  useSharedValue(INITIAL.top),
+    right:  useSharedValue(INITIAL.right),
+    bottom:  useSharedValue(INITIAL.bottom),
+  };
+
+  const updateValue = React.useCallback((target: { left: number, right: number, top: number, bottom: number }) => {    
+    const isInitialized = !!lastValues.current.__hasChanged;
+    if (!isInitialized) {
+      trackTarget(target);
+      ui.left.value = target.left;
+      ui.top.value = target.top;
+      ui.bottom.value = target.bottom;
+      ui.right.value = target.right;
+      rerender({});
+      return;
+    }
+
+    const leftChanged = (target.left !== lastValues.current.left);
+    const rightChanged = (target.right !== lastValues.current.right);
+    const topChanged = (target.top !== lastValues.current.top);
+    const bottomChanged = (target.bottom !== lastValues.current.bottom);
+    
+    // if (topChanged) console.log('ANIAMTE top', target.top);
+    // if (leftChanged) console.log('ANIAMTE left', target.left);
+    // if (rightChanged) console.log('ANIAMTE right', target.right);
+    // if (bottomChanged) console.log('ANIAMTE bottom', target.bottom);
+
+    trackTarget(target);
+    if (topChanged) ui.top.value = animateToValue(target.top, config.transition)
+    if (leftChanged) ui.left.value = animateToValue(target.left, config.transition)
+    if (rightChanged) ui.right.value = animateToValue(target.right, config.transition)
+    if (bottomChanged) ui.bottom.value = animateToValue(target.bottom, config.transition)
+  }, []);
+
+  const getTargetFromLayout = (event: LayoutChangeEvent, debugId?: string) => {
+    'worklet';
+
+    const layout = event.nativeEvent.layout;
+
+    
+    const nextWidth = Math.round(layout.width);
+    const nextHeight = Math.round(layout.height);
+    const nextLeft = Math.round(layout.x);
+    const nextTop = Math.round(layout.y);
+    const nextRight = nextLeft + nextWidth;
+    const nextBottom = nextTop + nextHeight;
+    
+    console.log('TRANSITION STYLE', debugId, [nextWidth, nextHeight, nextLeft, nextTop])
+    return {
+      left: nextLeft,
+      top: nextTop,
+      right: nextRight,
+      bottom: nextBottom,
+    };
+  }
+
+  const onInitialLayout = (event: LayoutChangeEvent) => {
+    const isInitialized = !!lastValues.current.__hasChanged;
+    if (isInitialized) return;
+
+    const target = getTargetFromLayout(event, 'onInitialLayout');
+    updateValue(target);
+  }
+
+  const onLayout = (event: LayoutChangeEvent) => {  
+    const target = getTargetFromLayout(event, 'onLayout');
+    updateValue(target);
+  }
+
+  React.useLayoutEffect(() => {
+    if(!config.elementRef) return;
+  
+    const measured = measure(config.elementRef!)
+    if (!measured) return;
+  
+    const event : any = {
+      nativeEvent: {
+        layout: {
+          width: measured.width,
+          height: measured.height,
+          x: measured.x,
+          y: measured.y,
+        }
+      }
+    };
+
+    const target = getTargetFromLayout(event, 'onLayout');
+    updateValue(target);
+  })
+
+  const isInitialized = !!lastValues.current.__hasChanged;
+
+  return {
+    isInitialized,
+    onInitialLayout,
+    onLayout,
+    ui,
+  }
+}
+
+const useAnchorStyle = (props: any) => {
+  const anchorValues = React.useRef<Record<string, number>>({});
+  anchorValues.current = {};
+
+  const positionStyle : any[] = [];
+  const withoutPositionStyle : any[] = [];
+  props.style.map((style: any) => {
+    const isAnimatedStyle = style.viewDescriptors;
+    if (isAnimatedStyle) {
+      withoutPositionStyle.push(style);
+      return
+    }
+    
+    const withPositionStyle: Record<string, any> = {};
+    const withoutPosStyle : Record<string, any> = {};
+    const positionAttrs = new Set([
+      'position', 'top', 'left', 'right', 'bottom',
+      'transform', 'margin', 'marginTop', 'marginBottom', 
+      'marginLeft','marginRight', 'marginHorizontal', 'marginVertical'
+    ]);
+
+    if (typeof style.top === 'number') anchorValues.current.top = style.top;
+    if (typeof style.left === 'number') anchorValues.current.left = style.left;
+    if (typeof style.right === 'number') anchorValues.current.right = style.right;
+    if (typeof style.bottom === 'number') anchorValues.current.bottom = style.bottom;
+
+    Object.entries(style).forEach(([attr, value]) => {
+      const isPos = positionAttrs.has(attr);
+      if (isPos) {
+        withPositionStyle[attr] = value;
+      } else {
+        withoutPosStyle[attr] = value; 
+      }
+    });
+
+    withoutPositionStyle.push(withoutPosStyle);
+    positionStyle.push(withPositionStyle);
+  });
+
+  const sharedAnchor = {
+    left: useSharedValue(0),
+    right: useSharedValue(0),
+    top: useSharedValue(0),
+    bottom: useSharedValue(0),
+  };
+
+  React.useLayoutEffect(() => {
+    sharedAnchor.bottom.value = anchorValues.current.bottom ?? 'unset'
+    sharedAnchor.left.value = anchorValues.current.left ?? 'unset';
+    sharedAnchor.right.value = anchorValues.current.right ?? 'unset';
+    sharedAnchor.top.value = anchorValues.current.top ?? 'unset';
+  })
+
+  return {
+    ui: sharedAnchor,
+    positionStyle,
+    withoutPositionStyle,
+  }
 }

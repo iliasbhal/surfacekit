@@ -1,9 +1,9 @@
 import React from "react";
 import { StandardProperties } from "csstype";
-import { StyleSheet } from "react-native";
+import { LayoutChangeEvent, StyleSheet } from "react-native";
 import { AnimatedRef, Keyframe, SharedValue, useAnimatedStyle, useSharedValue, withDelay, withTiming } from "react-native-reanimated";
 import { measure } from 'react-native-reanimated';
-import { runOnUI, scheduleOnRN, scheduleOnUI } from "react-native-worklets";
+import { runOnJS } from "react-native-worklets";
 import { animateToValue } from "./defaultAnimations";
 import { useDynamicSharedValues } from "./useDynamicSharedValues";
 import { AnimatePresenceContextValue } from "../AnimatePresence";
@@ -72,8 +72,11 @@ export const useAnimatedStylesheet = (
 
   delete componentProps.transition;
   delete componentProps.animation;
+  delete componentProps.overrides;
 
   const styleProp = componentProps.style;
+
+
 
   const sharedValues = useDynamicSharedValues();
   const animationKeys = Object.keys(transition || {});
@@ -84,6 +87,7 @@ export const useAnimatedStylesheet = (
   const animateProperty = (key: string, initial: any, next: any) => {
     remainingAnimatedProperties.delete(key);
     sharedValues.init(key, initial);
+    const hasChanged = sharedValues.target(key, next);
     state.animationEffects.set(key, () => {
       const isAnimating = state.pendingTransitions.length > 0;
       if (!isAnimating) {
@@ -93,11 +97,20 @@ export const useAnimatedStylesheet = (
       const promiseCtl = createControlledPromise()
       const transitionConfig = transition[key];
       const delay = compiledStyle.transitionDelay || 0;
-      const callback = () => {
-        scheduleOnRN(() => promiseCtl.complete());
-      };
 
-      sharedValues.set(key, animateToValue(next, transitionConfig, callback));
+      const onAnimationEnd = () => promiseCtl.complete();
+
+      console.log('animate', originalProps.debugId, hasChanged, key, next);
+
+      if (hasChanged) {
+        sharedValues.set(key, animateToValue(next, transitionConfig, () => {
+          'worklet';
+  
+          runOnJS(onAnimationEnd)();
+        }));
+      } else {
+        onAnimationEnd();
+      }
   
       state.pendingTransitions.push(promiseCtl.promise);
       const totalAnimationsCount = state.pendingTransitions.length;
@@ -110,7 +123,7 @@ export const useAnimatedStylesheet = (
     });
   };
 
-  React.useLayoutEffect(() => {
+  React.useEffect(() => {
     Array.from(state.animationEffects.values())
       .forEach((startAnimation) => startAnimation());
 
@@ -176,6 +189,7 @@ export const useAnimatedStylesheet = (
       const isTransform = key in defaultTransforms;
       if (!isTransform) {
         style[key] = sharedValue.value;
+        continue;
       }
       
       if (!style.transform) {
@@ -194,29 +208,35 @@ export const useAnimatedStylesheet = (
   styleProp.push(animatedStyle);
 
   if (presence?.presenceRef) {
-    const [detachStyle, setDetachStyle] = React.useState<any>(null);
-    React.useLayoutEffect(() => {
-      if (detachStyle) return;
-      if (!componentProps.detach) return;
+    const prevOnLayout = componentProps.onLayout;
+    const distanceX = useSharedValue(0);
+    const distanceY = useSharedValue(0);
+    componentProps.onLayout = (event: LayoutChangeEvent) => {
+      prevOnLayout?.(event);
 
-      const wrapperRef = measure(presence.presenceRef!);
-      const currentRect = measure(compRef!);
+      const layout = event.nativeEvent.layout;
+      if (!layout) return;
 
+      distanceX.value = layout.x;
+      distanceY.value = layout.y;
+    };
 
-      const distanceX = currentRect?.pageX - wrapperRef?.pageX;
-      const distanceY = currentRect?.pageY - wrapperRef?.pageY;
-      setDetachStyle({
-        distanceX: distanceX ?? 0,
-        distanceY: distanceY ?? 0,
-      }); 
+    const detachStyle = useAnimatedStyle(() => {
+
+      console.log('DETACH STYLE', {
+          position: 'absolute',
+          left: distanceX.value,
+          top: distanceY.value,
+      })
+      return {
+        position: 'absolute',
+        left: distanceX.value,
+        top: distanceY.value,
+      }
     });
 
-    if (componentProps.detach && detachStyle) {
-      styleProp.push({
-        position: 'absolute',
-        top: detachStyle.distanceY,
-        left: detachStyle.distanceX,
-      });
+    if (componentProps.detach) {
+      styleProp.push(detachStyle);
     }
   }
 

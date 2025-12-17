@@ -531,7 +531,7 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
           return RootComp;
         };
 
-        const component = <Props extends SurfaceProps<VariantStyle & { asChild?: true}> & SurfaceCustomProps>(props: Props & (Props extends { as: any} ? React.ComponentProps<Props['as']> : {})) => {
+        const component = <Props extends SurfaceProps<VariantStyle & { }> & SurfaceCustomProps>(props: Props & (Props extends { as: any} ? React.ComponentProps<Props['as']> : {})) => {
           const theme = useSurfaceTheme();
           const presence = React.useContext(AnimatePresenceContext);
           const styles = styleManager.getStylesheetForTheme(theme);
@@ -649,10 +649,6 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
             }
           }
 
-          if ('asChild' in nextProps) {
-            delete nextProps.asChild;
-          }
-
           if (transformAcc) {
             styleProp.push({
               transform: Object.entries(
@@ -699,7 +695,8 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
 
           const isAnimated = !!(hasAnimatedHook || props.entering || props.exiting || props.as);
           const rootComponent = getRootComponent(
-            props.as ||  Component
+            props.as 
+            ||  Component
           );
           const ComponentToRender = isAnimated ? getAnimatedComp(rootComponent) : rootComponent;
 
@@ -728,6 +725,7 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
                 children={props.children}
                 animateHeight={isHeightTransition}
                 animateWidth={isWidthTransition}
+                transition={props.transition?.['position']}
               />
             )),
           ]);
@@ -737,10 +735,10 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
             children: children,
             ref: (ref: any) => {
               compRef.current = ref;
-
               if (animatedRef) {
                 animatedRef(ref);
               }
+
               if (props.ref) {
                 if (typeof props.ref === 'function') {
                   props.ref(ref);
@@ -748,6 +746,7 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
                   props.ref.current = ref;
                 }
               }
+
             },
           }
 

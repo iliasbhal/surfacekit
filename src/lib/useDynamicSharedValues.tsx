@@ -36,7 +36,7 @@ export function useDynamicSharedValues() {
     },
     target(name: string, next: any) {
       ref[name].previous = ref[name].next;
-      ref[name].next = next;
+      ref[name].next = typeof next === 'number' ? Math.round(next) : next;
 
       const hasChanged = ref[name].previous !== ref[name].next;
       return hasChanged;

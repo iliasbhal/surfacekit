@@ -8,12 +8,13 @@ import { useColorScheme } from 'react-native';
 import { surfaced, themes } from '@/uikit';
 
 export default function RootLayout() {
+
   return (
     <GestureHandlerRootView>
       <ThemeProvider>
         <Stack 
           screenOptions={{
-            headerShown: false,
+            headerShown: true,
           }}
         />
       </ThemeProvider>

@@ -1,4 +1,4 @@
-import { Easing, ReduceMotion, withDelay, withTiming } from "react-native-reanimated";
+import { Easing, ReduceMotion, withDelay, withTiming, withSpring } from "react-native-reanimated";
 
 export const Natural = (value: number, callback?: () => void) => withTiming(
     value,
@@ -12,6 +12,18 @@ export const Natural = (value: number, callback?: () => void) => withTiming(
     callback,
   );
 
+export const Spring = (value: number, callback?: () => void) => withSpring(
+  value,
+  {
+    duration: 1000,
+    dampingRatio: 0.7,
+    mass: 76,
+    // easing: Easing.out(Easing.quad),
+    // easing: Easing.,
+    reduceMotion: ReduceMotion.System,
+  },
+  callback,
+);
 
 export const animateToValue = (value: number, config: any,callback?: () => void) => {
   if (typeof config === 'boolean') {
