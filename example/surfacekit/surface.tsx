@@ -719,7 +719,6 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
             )),
             isSizeAnimated && ((props) => (
               <AnimateLayoutSize
-                View={BaseView}
                 innerProps={componentProps}
                 innerRef={presenceParentRef}
                 children={props.children}
@@ -754,7 +753,6 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
             isPositionAnimated && ((p) => (
               <AnimateLayoutPosition
                 debugId={props.debugId}
-                View={BaseView}
                 children={p.children}
                 transition={props.transition?.['position']}
               />

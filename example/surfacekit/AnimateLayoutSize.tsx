@@ -5,7 +5,6 @@ import { LayoutChangeEvent } from 'react-native';
 import { animateToValue } from './lib/defaultAnimations';
 
 interface AnimateLayoutSizeProps {
-  View: any;
   innerRef?: AnimatedRef<any>;
   innerProps?: any;
   animateHeight?: boolean;
@@ -14,8 +13,6 @@ interface AnimateLayoutSizeProps {
 }
 
 export const AnimateLayoutSize : React.FC<React.PropsWithChildren<AnimateLayoutSizeProps>> = (props) => {
-  const { View } = props;
-
   const trackRef = props.innerRef || useAnimatedRef<any>();
   const animatedSize = useTransitionedSize({ 
     elementRef: trackRef,

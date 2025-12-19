@@ -8,12 +8,10 @@ import { useDynamicSharedValues } from './lib/useDynamicSharedValues';
 
 interface AnimateLayoutPositionProps {
   debugId?: string;
-  View: any;
   transition?: boolean;
 }
 
 export const AnimateLayoutPosition : React.FC<React.PropsWithChildren<AnimateLayoutPositionProps>> = (props) => {
-  const { View } = props;
   const child = React.Children.only(props.children) as any;
   
   const trackRef = useAnimatedRef();
