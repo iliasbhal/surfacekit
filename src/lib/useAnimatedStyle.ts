@@ -1,16 +1,69 @@
 import React from "react";
 import { StandardProperties } from "csstype";
-import { LayoutChangeEvent, StyleSheet } from "react-native";
+import { LayoutChangeEvent, Platform, StyleSheet } from "react-native";
 import { AnimatedRef, Keyframe, SharedValue, useAnimatedStyle, useSharedValue, withDelay, withTiming } from "react-native-reanimated";
 import { measure } from 'react-native-reanimated';
 import { runOnJS } from "react-native-worklets";
 import { animateToValue } from "./defaultAnimations";
 import { useDynamicSharedValues } from "./useDynamicSharedValues";
-import { AnimatePresenceContextValue } from "../AnimatePresence";
+import { TreeItem } from "../AnimatePresence";
 import { createControlledPromise } from "./ControlledPromise";
 import { replacePart } from "expo-router/build/fork/getStateFromPath-forks";
 import { useIsRenderFromOutside } from "./useIsRenderFromOutside";
 import { PropsFilter } from "react-native-reanimated/lib/typescript/createAnimatedComponent/PropsFilter";
+
+export const useAnimatedStylesheet = (
+  compRef: AnimatedRef<any>,
+  componentProps: any,
+  presence: TreeItem,
+  originalProps: any,
+) => {
+  const transition = componentProps.transition || {};
+  const styleProp = componentProps.style;
+  const animation = componentProps.animation;
+
+  delete componentProps.transition;
+  delete componentProps.animation;
+  delete componentProps.overrides;
+
+  useTransitionedStyles(presence, transition, styleProp, originalProps);
+  useDetachStyle(compRef, componentProps, presence, originalProps, styleProp);
+
+
+  // if (animation) {
+
+  //   const animations = Array.isArray(animation) ? animation : [animation];
+    
+  //   animations.forEach((animation) => {
+  //     const keyframe = new Keyframe(animation.keyframes);
+  //     const defintions = keyframe.parseDefinitions();
+
+
+  //     // defintions.initialValues.forEach((value: any, index: number) => {
+
+  //     // })
+  //     // withSequence(
+  //     //   ...keyframePoints.map((keyframePoint: KeyframePoint) =>
+  //     //     withTiming(keyframePoint.value, {
+  //     //       duration: keyframePoint.duration,
+  //     //       easing: keyframePoint.easing
+  //     //         ? keyframePoint.easing
+  //     //         : Easing.linear,
+  //     //     })
+  //     //   )
+  //     // )
+
+  //     // componentProps.style.push({
+  //     //   animationName: animation.keyframes,
+  //     //   animationDuration: animation.duration || '300ms',
+  //     //   animationIterationCount: animation.repeat || 0,
+  //     //   animationTimingFunction: animation.timingFunction || 'linear',
+  //     //   animationDirection: animation.direction || 'normal',
+  //     // })
+  //   });
+  // }
+  
+};
 
 const defaultTransforms: Record<string, any> = {
   rotate: "0deg",
@@ -55,28 +108,18 @@ const styleDefaults = {
   borderBottomRightRadius: 0,
 } as const;
 
-export const useAnimatedStylesheet = (
-  compRef: AnimatedRef<any>,
-  componentProps: any,
-  presence: AnimatePresenceContextValue,
-  originalProps: any,
+const useTransitionedStyles = (
+  presence: TreeItem,
+  transition: any,
+  styleProp: any[],
+  props: any,
 ) => {
+
   const [state] = React.useState(() => ({
     pendingTransitions: [] as Promise<any>[],
     animationEffects: new Map<string, () => void>(),
     // completedAnimations: new Set<string>(),
   }));
-
-  const transition = componentProps.transition || {};
-  const animation = componentProps.animation;
-
-  delete componentProps.transition;
-  delete componentProps.animation;
-  delete componentProps.overrides;
-
-  const styleProp = componentProps.style;
-
-
 
   const sharedValues = useDynamicSharedValues();
   const animationKeys = Object.keys(transition || {});
@@ -88,6 +131,8 @@ export const useAnimatedStylesheet = (
     remainingAnimatedProperties.delete(key);
     sharedValues.init(key, initial);
     const hasChanged = sharedValues.target(key, next);
+    presence?.lifecycle?.scheduleAnimation?.();
+
     state.animationEffects.set(key, () => {
       const isAnimating = state.pendingTransitions.length > 0;
       if (!isAnimating) {
@@ -99,8 +144,6 @@ export const useAnimatedStylesheet = (
       const delay = compiledStyle.transitionDelay || 0;
 
       const onAnimationEnd = () => promiseCtl.complete();
-
-      console.log('animate', originalProps.debugId, hasChanged, key, next);
 
       if (hasChanged) {
         sharedValues.set(key, animateToValue(next, transitionConfig, () => {
@@ -206,76 +249,79 @@ export const useAnimatedStylesheet = (
 
   
   styleProp.push(animatedStyle);
+}
 
-  if (presence?.presenceRef) {
-    const prevOnLayout = componentProps.onLayout;
-    const distanceX = useSharedValue(0);
-    const distanceY = useSharedValue(0);
-    componentProps.onLayout = (event: LayoutChangeEvent) => {
-      prevOnLayout?.(event);
+const useDetachStyle = (
+  compRef: AnimatedRef<any>,
+  componentProps: any,
+  presence: TreeItem,
+  originalProps: any,
+  styleProp: any[]
+) => {
 
-      const layout = event.nativeEvent.layout;
-      if (!layout) return;
-
-      distanceX.value = layout.x;
-      distanceY.value = layout.y;
-    };
-
-    const detachStyle = useAnimatedStyle(() => {
-
-      console.log('DETACH STYLE', {
-          position: 'absolute',
-          left: distanceX.value,
-          top: distanceY.value,
-      })
-      return {
-        position: 'absolute',
-        left: distanceX.value,
-        top: distanceY.value,
-      }
-    });
-
-    if (componentProps.detach) {
-      styleProp.push(detachStyle);
-    }
+  if (!presence?.item.containerRef) {
+    return;
   }
 
+  const prevOnLayout = componentProps.onLayout;
+  const detachHistory = React.useRef<boolean[]>([]);
+  const distanceX = useSharedValue(0);
+  const distanceY = useSharedValue(0);
+  componentProps.onLayout = (event: LayoutChangeEvent) => {
+    prevOnLayout?.(event);
 
+    const nativeLayout = event.nativeEvent.layout!;
+    const layout = Platform.OS === 'web' && compRef ? measure(compRef)! : nativeLayout;
 
-  // if (animation) {
+    distanceX.value = layout.x;
+    distanceY.value = layout.y;
+  };
 
-  //   const animations = Array.isArray(animation) ? animation : [animation];
-    
-  //   animations.forEach((animation) => {
-  //     const keyframe = new Keyframe(animation.keyframes);
-  //     const defintions = keyframe.parseDefinitions();
+  const detachStyle = useAnimatedStyle(() => {
+    return {
+      left: distanceX.value,
+      top: distanceY.value,
+    }
+  });
 
+  const unDetachStyle = useAnimatedStyle(() => {
+    return {
+      // left: 0,
+      // top: 0,
+    } as any;
+  });
 
-  //     // defintions.initialValues.forEach((value: any, index: number) => {
-
-  //     // })
-  //     // withSequence(
-  //     //   ...keyframePoints.map((keyframePoint: KeyframePoint) =>
-  //     //     withTiming(keyframePoint.value, {
-  //     //       duration: keyframePoint.duration,
-  //     //       easing: keyframePoint.easing
-  //     //         ? keyframePoint.easing
-  //     //         : Easing.linear,
-  //     //     })
-  //     //   )
-  //     // )
-
-  //     // componentProps.style.push({
-  //     //   animationName: animation.keyframes,
-  //     //   animationDuration: animation.duration || '300ms',
-  //     //   animationIterationCount: animation.repeat || 0,
-  //     //   animationTimingFunction: animation.timingFunction || 'linear',
-  //     //   animationDirection: animation.direction || 'normal',
-  //     // })
-  //   });
-  // }
   
-};
+  const isDetached = !!componentProps.detach;
+  detachHistory.current.push(isDetached);
+  detachHistory.current = detachHistory.current.slice(-2);
+
+  // When we detach the element, but quickly rerender without the detach styles
+  // the detach style are kept because of how reanimated styles work.
+  // So we need to override those properties to ensure that detach style are not present
+  // when we rerender without detach = true;
+  const shouldUndoDetachAnimatedStyles = detachHistory.current[0] === true
+    && detachHistory.current[1] === false
+
+  if (isDetached) {
+    // When animating position, we need to track whether the component is 
+    // positioned absolutely or not. If the style is applied in animated style
+    // then we can't read and copy that information when applying styles
+    // to the tracking component in AnimateLayoutPosition component.
+    styleProp.push({ 
+      position: 'absolute',
+      top: distanceY.value,
+      left: distanceX.value,
+      
+      // detach style should be displayed below undetached apps.
+      zIndex: -1,
+    });
+
+    styleProp.push(detachStyle);
+  } else if (shouldUndoDetachAnimatedStyles) {
+    styleProp.unshift(unDetachStyle);
+  }
+}
 
 export type TransformProperty =
   | "translateX"

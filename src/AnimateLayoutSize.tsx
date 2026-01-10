@@ -1,11 +1,10 @@
 import React from 'react';
-import {  AnimatedRef, measure, useAnimatedRef, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import Animated, {  AnimatedRef, measure, useAnimatedRef, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { useAnimatedLayoutSize, useLayoutSize } from './lib/useLayoutSize';
-import { LayoutChangeEvent } from 'react-native';
+import { LayoutChangeEvent, Platform } from 'react-native';
 import { animateToValue } from './lib/defaultAnimations';
 
 interface AnimateLayoutSizeProps {
-  View: any;
   innerRef?: AnimatedRef<any>;
   innerProps?: any;
   animateHeight?: boolean;
@@ -14,8 +13,6 @@ interface AnimateLayoutSizeProps {
 }
 
 export const AnimateLayoutSize : React.FC<React.PropsWithChildren<AnimateLayoutSizeProps>> = (props) => {
-  const { View } = props;
-
   const trackRef = props.innerRef || useAnimatedRef<any>();
   const animatedSize = useTransitionedSize({ 
     elementRef: trackRef,
@@ -38,29 +35,29 @@ export const AnimateLayoutSize : React.FC<React.PropsWithChildren<AnimateLayoutS
   }
 
   return (
-    <View
+    <Animated.View
       key={"apply"}
-      relative
-      overflowHidden
-      debugId="animateSize"
-      disableLayoutTransitions
-      style={[    
+      className="OUTER"
+      style={[
+        { position: 'relative' },
         animatedSize.isInitialized && applyStyle,
       ]}
       
     >
-      <View
+      <Animated.View
         key={"track"}
         onLayout={animatedSize.onLayout}
         ref={trackRef}
-
-        // We need to forward flexDirection and gap
-        // otherwise the layout won't look how the user intend
-        flexDirection={getStyle("flexDirection")}
-        gap={getStyle('gap')}
-        overrides={[
+        className="INNER"
+        style={[
+          { 
+            // We need to forward flexDirection and gap
+            // otherwise the layout won't look how the user intend
+            flexDirection: getStyle("flexDirection"),
+            gap: getStyle('gap'),
+          },
           animatedSize.isInitialized && {
-            absolute: true,
+            position: 'absolute',
             top: 0,
             left: 0,
             height: animateWidth ? animateHeight ? undefined : "100%" : undefined,
@@ -69,8 +66,8 @@ export const AnimateLayoutSize : React.FC<React.PropsWithChildren<AnimateLayoutS
         ]}
       >
         {props.children}
-      </View>
-    </View>
+      </Animated.View>
+    </Animated.View>
   )
 }
 
@@ -116,10 +113,14 @@ const useTransitionedSize = (config: {elementRef: AnimatedRef<any>, transition: 
   const getTargetFromLayout = (event: LayoutChangeEvent, debugId?: string) => {
     'worklet';
 
-    const layout = event.nativeEvent.layout;
+    const nativeLayout = event.nativeEvent.layout;
+    const layout = Platform.OS === 'web' 
+      ? measure(config.elementRef)!
+      : nativeLayout;
+
     const nextWidth = Math.round(layout.width);
     const nextHeight = Math.round(layout.height);
-    
+
     return {
       width: nextWidth,
       height: nextHeight,
@@ -131,7 +132,7 @@ const useTransitionedSize = (config: {elementRef: AnimatedRef<any>, transition: 
     updateValue(target);
   }
 
-  React.useLayoutEffect(() => {
+  React.useEffect(() => {
     if(!config.elementRef) return;
   
     const measured = measure(config.elementRef!)
@@ -148,7 +149,7 @@ const useTransitionedSize = (config: {elementRef: AnimatedRef<any>, transition: 
       }
     };
 
-    const target = getTargetFromLayout(event, 'onLayout');
+    const target = getTargetFromLayout(event, 'useEffect');
     updateValue(target);
   })
 

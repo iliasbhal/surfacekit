@@ -15,9 +15,8 @@ export const Natural = (value: number, callback?: () => void) => withTiming(
 export const Spring = (value: number, callback?: () => void) => withSpring(
   value,
   {
-    duration: 1000,
+    duration: 900,
     dampingRatio: 0.7,
-    mass: 76,
     // easing: Easing.out(Easing.quad),
     // easing: Easing.,
     reduceMotion: ReduceMotion.System,
@@ -26,9 +25,10 @@ export const Spring = (value: number, callback?: () => void) => withSpring(
 );
 
 export const animateToValue = (value: number, config: any,callback?: () => void) => {
-  if (typeof config === 'boolean') {
-    return Natural(value, callback);
-  }
+  return Spring(value, callback);
+  // if (typeof config === 'boolean') {
+  //   return Natural(value, callback);
+  // }
 
-  return Natural(value, callback);
+  // return Natural(value, callback);
 }
