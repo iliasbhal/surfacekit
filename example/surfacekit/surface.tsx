@@ -65,6 +65,14 @@ export const createTheme = <T extends SurfaceTheme>(theme: T) : T => {
 
 export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
   const useFonts = () => {
+    if (process.env.NODE_ENV === 'test') {
+      return {
+        loaded: true,
+        error: null,
+        fonts: [],
+      };
+    }
+
     const theme = useSurfaceTheme();
     const fontsWithFlattenPaths = withFontsFamilyKeys(
       getCompiledTokens(theme.fonts, { fonts: true }),
@@ -534,6 +542,7 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
         const component = <Props extends SurfaceProps<VariantStyle & { }> & SurfaceCustomProps>(props: Props & (Props extends { as: any} ? React.ComponentProps<Props['as']> : {})) => {
           const theme = useSurfaceTheme();
           const presence = React.useContext(AnimatePresenceContext);
+
           const styles = styleManager.getStylesheetForTheme(theme);
           const compRef = React.useRef<T>(null);
 

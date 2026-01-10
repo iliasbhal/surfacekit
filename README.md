@@ -7,7 +7,7 @@
 # SurfaceKit ▉▊▋▍▎▏
 
 > **Lightning-fast, type-safe surface primitives for React and React Native.**  
-> Stop wrestling with style objects. Start building beautiful UIs with confidence.
+> Build polymorphic components with declarative variants and runtime style overrides. Stop wrestling with style objects. Start building beautiful UIs with confidence.
 
 [![npm version](https://img.shields.io/npm/v/surfacekit)](https://www.npmjs.com/package/surfacekit)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -18,11 +18,13 @@
 
 SurfaceKit is your **design system's best friend**. It transforms design tokens into production-ready components without the boilerplate headache. Think of it as **styled-components meets Tailwind meets Framer Motion**—but actually fun to use.
 
+SurfaceKit empowers you to build **polymorphic components** that adapt their underlying DOM/RN element through the `as` prop, while maintaining full type safety across variant props and style overrides. The variant system enables **composable style APIs** where each variant defines a discrete set of style mutations, and **runtime overrides** let you inject dynamic styles based on interaction state, props, or computed values—all without sacrificing type inference or performance.
+
 ### Why developers love SurfaceKit ✨
 
 - 🚀 **Zero boilerplate** – Move from tokens to components in seconds
-- 🎨 **Type-safe variants** – Compose styles without juggling style objects
-- 🎭 **Declarative interactions** – Hover, press, focus, and presence states made easy
+- 🎨 **Type-safe variants** – Compose polymorphic style APIs without juggling style objects
+- 🎭 **Declarative overrides** – Runtime style injection for hover, press, focus, and presence states
 - ⚡ **Performance first** – Built on Reanimated, gesture-handler, and Expo fonts
 - 🔧 **Your theme, your rules** – Bring any theme shape; SurfaceKit infers the rest
 
@@ -196,10 +198,12 @@ const theme = {
 
 ## 🏗️ Creating Surfaces
 
-Surfaces are components created with `surfaced(Component).with(factory)`. The factory function receives:
+Surfaces are **polymorphic components** created with `surfaced(Component).with(factory)`. The factory function receives:
 
 - `theme` – Your entire theme object (fully typed!)
-- `attrs` – Helpers for creating dynamic variants
+- `attrs` – Helpers for creating dynamic variants and computed style transformations
+
+Surfaces support **polymorphism** via the `as` prop, allowing you to swap the underlying component while preserving all variant props and style behavior. This enables true component composition where a `Button` surface can render as a `View`, `Text`, or any custom component without losing its variant API.
 
 ```tsx
 const Button = surfaced(View).with(({ theme, attrs }) => ({
@@ -229,7 +233,7 @@ const Button = surfaced(View).with(({ theme, attrs }) => ({
 
 ## 🎭 Variants Explained
 
-Variants are the heart of SurfaceKit. They let you expose new props that control styles without leaking implementation details.
+Variants are the heart of SurfaceKit's **composable style system**. They let you expose new props that control styles without leaking implementation details. Each variant defines a **discrete style mutation** that can be combined with other variants, creating a type-safe API surface that abstracts away style object complexity. Variants support **polymorphic composition**—you can extend surfaces and override specific variant definitions while inheriting the rest.
 
 ### Boolean Variants
 
@@ -465,7 +469,7 @@ SurfaceKit automatically composes gestures declared in `overrides`.
 
 ### How do I compose components?
 
-Extend existing surfaces:
+SurfaceKit supports **polymorphic composition** through surface extension. Extend existing surfaces:
 
 ```tsx
 const BaseCard = surfaced(View).with(() => ({
@@ -496,12 +500,14 @@ const FancyCard = surfaced(BaseCard).with(() => ({
 <FancyCard elevation="high" glow />
 ```
 
-Use `.as()` to swap the underlying component:
+Use `.as()` for **polymorphic rendering**—swap the underlying component while preserving all variants and overrides:
 
 ```tsx
 const Button = surfaced(View).with(/* ... */);
-const LinkButton = Button.as(Text);
+const LinkButton = Button.as(Text);  // Renders as <Text> but keeps Button's variant API
 ```
+
+This enables true **polymorphism**: the same component interface can render different underlying elements based on context, while maintaining consistent styling behavior.
 
 ---
 
@@ -640,7 +646,7 @@ import { FadeIn, FadeOut } from 'react-native-reanimated';
 
 ### Using `stateId` and `overrides`
 
-Opt into interaction tracking with `stateId`:
+SurfaceKit's **override system** enables runtime style injection based on component state. Opt into interaction tracking with `stateId`, then use the `overrides` prop to declaratively define style mutations that respond to interaction state. Overrides are **composable and mergeable**—multiple override functions can be applied, and they merge with variant styles in a predictable order (variants → overrides → style prop).
 
 ```tsx
 <Button
@@ -819,7 +825,7 @@ Creates a surfaced instance bound to your theme type.
 
 ### `surfaced(Component).with(factory)`
 
-Creates a surface component.
+Creates a **polymorphic surface component** with a type-safe variant API. The resulting component can be rendered with different underlying elements via the `as` prop while maintaining all variant props and style behavior.
 
 **Factory signature:**
 ```tsx
@@ -847,15 +853,17 @@ Creates a surface component.
 
 All surfaces accept:
 
-- **Variant props** – Any keys defined in `variants`
-- **`as`** – Swap underlying component: `as={Text}`
+- **Variant props** – Any keys defined in `variants` (type-safe, composable style mutations)
+- **`as`** – **Polymorphic rendering**: swap underlying component: `as={Text}` while preserving variant API
 - **`gesture`** – Gesture handler gesture
 - **`transition`** – Transition config: `{ height: true, position: true, children: true }`
 - **`animation`** – Keyframe animation config
 - **`entering`** / **`exiting`** – Reanimated animation builders
-- **`stateId`** – Enable interaction tracking
-- **`overrides`** – Function returning override styles: `(state) => [...]`
-- **`style`** – Standard React Native style prop (merged last)
+- **`stateId`** – Enable interaction state tracking for runtime overrides
+- **`overrides`** – **Runtime style injection**: function returning override styles: `(state) => [...]` (merged after variants, before style prop)
+- **`style`** – Standard React Native style prop (merged last, highest precedence)
+
+**Style resolution order:** Base styles → Variants → Overrides → `style` prop
 
 ### Token Lookups
 

@@ -1,5 +1,5 @@
 import React, { RefObject } from 'react';
-import { AnimatedRef, interpolate, measure, runOnJS, useAnimatedReaction, useAnimatedRef, useAnimatedStyle, useDerivedValue, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, { AnimatedRef, interpolate, measure, runOnJS, useAnimatedReaction, useAnimatedRef, useAnimatedStyle, useDerivedValue, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useAnimatedLayoutSize, useLayoutSize } from './lib/useLayoutSize';
 import { LayoutChangeEvent, Platform, findNodeHandle } from 'react-native';
 import { animateToValue } from './lib/defaultAnimations';
@@ -20,23 +20,26 @@ export const AnimateLayoutPosition : React.FC<React.PropsWithChildren<AnimateLay
   const sizeTracker = useAnimatedLayoutSize(applyRef, 'sizeTracker');
   const anchor = useAnchorStyle(child.props);
   const transition = useTransitionedPosition({
-    elementRef: trackRef,
+    debugId: props.debugId,
     transition: props.transition,
+    trackRef: trackRef,
+    applyRef: applyRef,
   });
   
   
   const isSizeMeasured = !!sizeTracker.initialSize;
 
   const anchorStyle = useAnimatedStyle(() => {
-    const position : Record<string, number | string> = {};
-    if (!isSizeMeasured) return position;
+    if (!isSizeMeasured) return {};
 
+    
     const trackPos = measure(trackRef!)
-    if (!trackPos) return position;
+    if (!trackPos) return {};
+    
+    const position : Record<string, number | string> = {
+      position: 'absolute'
+    };
 
-    
-    position.position = 'absolute';
-    
     const isOppositeAnchorHorizontal = typeof anchor.ui.right.value === 'number';
     if (isOppositeAnchorHorizontal) {
       const distance = trackPos.x + trackPos.width - transition.ui.right.value;
@@ -56,16 +59,11 @@ export const AnimateLayoutPosition : React.FC<React.PropsWithChildren<AnimateLay
       position.top = transition.ui.top.value;
       position.bottom = 'unset';
     }
-
-    // console.log('REACTION STYLE', {
-    //   right: position.right,
-    //   left: position.left,
-    // })
   
     return position;
   });
 
-  // console.log('RERENDER ANIMATE LAYOUT', anchorSide);
+  anchorStyle.name = "ANCHOR";
 
   // We render in two steps.
   // 1st render is to display the component normaly
@@ -73,30 +71,6 @@ export const AnimateLayoutPosition : React.FC<React.PropsWithChildren<AnimateLay
   // we keep updating the the size of the "track" component so that the "apply" component can be positioned correctly
   // the track is not visible and is used to compute the translateXY for the animation. It's like a placeholder.
   return [
-    isSizeMeasured && ( 
-      <View
-        key={"track"}
-        ref={trackRef}
-        onLayout={(event) => {
-          // if (rerenderIdRef.current.count === 0) {
-          //   rerenderIdRef.current.count++;
-            transition.onLayout?.(event);
-          // }
-        }}
-        style={[
-          ...anchor.positionStyle,
-          ...sizeTracker.style,
-          {
-            // position: 'relative',
-            zIndex: -1,
-            opacity: 0,
-            backgroundColor: 'transparent',
-            // opacity: .5,
-            // backgroundColor: 'red'
-          }
-        ]}
-      />
-    ),
     React.cloneElement(child, {
       key:"apply",
       ...child.props,
@@ -107,14 +81,47 @@ export const AnimateLayoutPosition : React.FC<React.PropsWithChildren<AnimateLay
       onLayout: (event: LayoutChangeEvent) => {
         transition.onInitialLayout(event);
         sizeTracker.onLayout(event);
-        child.props.onLayout?.(event);
+        
       },
       style: [
         { zIndex: 1 },
-        ...child.props.style,        
+        ...child.props.style,
         transition.isInitialized && anchorStyle,
+        // Debug Styles,
+        // {
+          // opacity: .1,
+          // backgroundColor: 'black',
+        // },
       ]
-    })
+    }),
+    (transition.isInitialized) && ( 
+      <Animated.View
+        key={"track"}
+        ref={trackRef}
+        onLayout={(event) => {
+          // if (rerenderIdRef.current.count === 0) {
+          //   rerenderIdRef.current.count++;
+            transition.onLayout?.(event);
+            child.props.onLayout?.(event);
+          // }
+        }}
+        style={[
+          ...anchor.positionStyle,
+          ...sizeTracker.style,
+          {
+            zIndex: -1,
+            opacity: 0,
+            backgroundColor: 'transparent',
+          },
+
+          // // Debug Styles,
+          // {
+            // opacity: .5,
+            // backgroundColor: 'red'
+          // },
+        ]}
+      />
+    ),
   ];
 }
 
@@ -126,7 +133,12 @@ const INITIAL = {
   bottom: 0,
 }
 
-const useTransitionedPosition = (config: {elementRef: AnimatedRef<any>, transition: any}) => {
+const useTransitionedPosition = (config: {
+  trackRef: AnimatedRef<any>,
+  applyRef: AnimatedRef<any>,
+  transition: any,
+  debugId?: string
+}) => {
   const [_, rerender] = React.useState({})
   const lastValues = React.useRef({ ...INITIAL });
   const trackTarget = (target: ReturnType<typeof getTargetFromLayout>) => {
@@ -173,11 +185,18 @@ const useTransitionedPosition = (config: {elementRef: AnimatedRef<any>, transiti
     if (bottomChanged) ui.bottom.value = animateToValue(target.bottom, config.transition)
   }, []);
 
-  const getTargetFromLayout = (event: LayoutChangeEvent, debugId?: string) => {
+  const getTargetFromLayout = (event: LayoutChangeEvent, ref: AnimatedRef<any>, debugId?: string) => {
     'worklet';
 
-    const layout = event.nativeEvent.layout;
+    // On web it look like the layout is not correct when reading layout events
+    // So we'll measure it when a new layout event is triggered instead. 
+    // it works fine on ios and android.
+    const nativeLayout = event.nativeEvent.layout;
+    const layout = Platform.OS == 'web' 
+    ? measure(ref)!
+    : nativeLayout
 
+    // console.log('getTargetFromLayout', `${config.debugId} | ${debugId}`, layout);
     
     const nextWidth = Math.round(layout.width);
     const nextHeight = Math.round(layout.height);
@@ -186,7 +205,6 @@ const useTransitionedPosition = (config: {elementRef: AnimatedRef<any>, transiti
     const nextRight = nextLeft + nextWidth;
     const nextBottom = nextTop + nextHeight;
     
-    console.log('TRANSITION STYLE', debugId, [nextWidth, nextHeight, nextLeft, nextTop])
     return {
       left: nextLeft,
       top: nextTop,
@@ -199,21 +217,23 @@ const useTransitionedPosition = (config: {elementRef: AnimatedRef<any>, transiti
     const isInitialized = !!lastValues.current.__hasChanged;
     if (isInitialized) return;
 
-    const target = getTargetFromLayout(event, 'onInitialLayout');
+    const target = getTargetFromLayout(event, config.applyRef, 'onInitialLayout');
     updateValue(target);
   }
 
   const onLayout = (event: LayoutChangeEvent) => {  
-    const target = getTargetFromLayout(event, 'onLayout');
+    const target = getTargetFromLayout(event, config.trackRef, 'onLayout');
     updateValue(target);
   }
 
-  React.useLayoutEffect(() => {
-    if(!config.elementRef) return;
-  
-    const measured = measure(config.elementRef!)
+  React.useEffect(() => {
+    const isInitialized = !!lastValues.current.__hasChanged;
+    const ref = isInitialized ? config.trackRef : config.applyRef;
+    if(!ref) return;
+
+    const measured = measure(ref)!;
     if (!measured) return;
-  
+
     const event : any = {
       nativeEvent: {
         layout: {
@@ -225,7 +245,7 @@ const useTransitionedPosition = (config: {elementRef: AnimatedRef<any>, transiti
       }
     };
 
-    const target = getTargetFromLayout(event, 'onLayout');
+    const target = getTargetFromLayout(event, ref, 'onLayoutEffect');
     updateValue(target);
   })
 

@@ -1,6 +1,6 @@
 import React from "react";
 import { Gesture, GestureType } from "react-native-gesture-handler";
-import { AnimatePresenceContextValue } from "../AnimatePresence";
+import { TreeItem } from "../AnimatePresence";
 import { useRerenderRef } from "./useRerenderRef";
 import { useInteractionStateContext } from "./Group";
 
@@ -19,17 +19,11 @@ export const useComponentOverrides = (props: any) => {
     isPressed: false,
     isFocused: false,
 
-    getOverrideContext: (presence: AnimatePresenceContextValue) => {
+    getOverrideContext: (presence: TreeItem) => {
       return {
         of(id: string) {
           const state = useInteractionStateContext({ groupId: id })
           return state;
-        },
-        get entered() {
-          return presence?.entered;
-        },
-        get entering() {
-          return presence?.entering;
         },
         get initial() {
           const isFirstRender = current.isInitial;
@@ -42,9 +36,16 @@ export const useComponentOverrides = (props: any) => {
           if (!presence) return false;
           return isFirstRender;
         },
+        get entering() {
+          return presence?.state.entering;
+        },
+        get entered() {
+          return presence?.state.present
+            && !presence?.state.entering;
+        },
         get exiting() {
           if (!presence) return false;
-          const isExiting = !presence?.isPresent;
+          const isExiting = !presence?.state.present;
           return isExiting;
         },
         get hovered() {
