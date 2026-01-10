@@ -1,160 +1,177 @@
 import { useFonts } from 'expo-font';
-import React12, { createContext, useContext, useState, useEffect } from 'react';
+import * as React12 from 'react';
+import React12__default, { createContext, useContext, useState, useEffect } from 'react';
 import { StyleSheet, useWindowDimensions, View, Text, Platform } from 'react-native';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
-import Animated, { useAnimatedRef, useAnimatedStyle, useSharedValue, measure, cancelAnimation, makeMutable, withTiming, ReduceMotion, Easing } from 'react-native-reanimated';
+import Animated, { useAnimatedRef, useAnimatedStyle, measure, useSharedValue, cancelAnimation, makeMutable, withSpring, ReduceMotion } from 'react-native-reanimated';
+import { EventEmitter } from 'expo-modules-core';
+import { jsx, jsxs } from 'react/jsx-runtime';
 import { runOnJS } from 'react-native-worklets';
-import { Orientation, addOrientationChangeListener, removeOrientationChangeListener, getOrientationAsync } from 'expo-screen-orientation';
+import { Orientation, addOrientationChangeListener, getOrientationAsync } from 'expo-screen-orientation';
 
 // src/surface.tsx
-var ANIMATE_PRESENCE_PROPS_KEY = "__AnimatePresenceProps__";
-var getAnimatedPresenceProps = (props) => {
-  const animtePresencProps = props[ANIMATE_PRESENCE_PROPS_KEY] || {};
-  return animtePresencProps;
-};
 var AnimatePresenceContext = React12.createContext(null);
-var AnimatePresence = (props) => {
-  const mode = props.mode || "sync";
-  const propagate = props.propagate || false;
-  const parentPresence = React12.useContext(AnimatePresenceContext);
-  const [store, setStore] = React12.useState(() => ({
-    isInitial: true,
-    renderedChildKeys: /* @__PURE__ */ new Set(),
-    enteredKeys: /* @__PURE__ */ new Set(),
-    keysBeforeExit: /* @__PURE__ */ new Set(),
-    // These indexes are used to track exiting elements indexes
-    // These are used to maintain exiting element placemenets. 
-    exitedIndexes: [],
-    contextByKey: /* @__PURE__ */ new Map(),
-    animatingKeys: /* @__PURE__ */ new Set()
-  }));
-  const rerender = () => setStore((p) => ({ ...p }));
-  store.renderedChildKeys.clear();
-  const childrenArr = (
-    // @ts-expect-error
-    props.children?.length > -1 ? props.children : [props.children]
-  );
-  const children = childrenArr.filter((c) => !!c).map((child, index, arr) => {
-    const isLast = arr.length - 1 === index;
-    if (!child.key) return child;
-    const removeExitingChild = () => {
-      if (context.isPresent) {
-        return;
-      }
-      const isAnimatingExit = store.animatingKeys.has(child.key);
-      if (isAnimatingExit) {
-        return;
-      }
-      const shouldRerender = store.contextByKey.has(child.key);
-      if (!shouldRerender) {
-        return;
-      }
-      store.contextByKey.delete(child.key);
-      store.enteredKeys.delete(child.key);
-      store.exitedIndexes.push(context.index);
-      store.exitedIndexes.sort();
-      rerender();
-    };
-    const context = {
-      key: child.key,
-      isInitial: store.isInitial,
-      index,
-      isLast,
-      element: child,
-      get presenceRef() {
-        return props.parentRef;
+var PresenceController = class {
+  wrappedPresenceRef;
+  tree = [];
+  constructor(config) {
+    this.wrappedPresenceRef = config.presenceRef;
+  }
+  upsertItem(child, index) {
+    const treeItem = {
+      item: {
+        key: child.key,
+        child,
+        index,
+        containerRef: this.wrappedPresenceRef
       },
-      get entering() {
-        const isPresent = context.isPresent;
-        const isAnimatingEnter = store.animatingKeys.has(child.key);
-        const hasEntered = context.entered;
-        const isEntering = isPresent && isAnimatingEnter && !hasEntered;
-        return isEntering;
+      state: {
+        present: true,
+        animating: false,
+        entering: this.isFirstRender ? false : true
       },
-      get entered() {
-        const hasEntered = store.enteredKeys.has(child.key);
-        return hasEntered;
-      },
-      get isPresent() {
-        if (propagate && !parentPresence?.isPresent) {
-          return false;
-        }
-        const isRenderedNormally = store.renderedChildKeys.has(child.key);
-        return isRenderedNormally;
-      },
-      lifecycle: {
-        onRender() {
-          Promise.resolve().then(() => {
-            if (context.isPresent) {
-              removeExitingChild();
-            }
+      api: {
+        onExitingDone: () => {
+          const isPresent = treeItem.state.present === true;
+          const isAnimating = treeItem.state.animating === true;
+          if (!isPresent && !isAnimating) {
+            this.tree.splice(treeItem.item.index, 1);
+            this.rerender();
+          }
+        },
+        removeIfNotAnimate: () => {
+          setTimeout(() => {
+            treeItem.api.onExitingDone();
           });
         },
-        onAnimationStart() {
-          store.enteredKeys.add(child.key);
-          store.animatingKeys.add(child.key);
+        updateEnteringState: () => {
+          setTimeout(() => {
+            const isAnimating = treeItem.state.animating;
+            if (!isAnimating) {
+              this.resetEntering(treeItem);
+            }
+          });
+        }
+      },
+      lifecycle: {
+        onRender: () => {
+          treeItem.api.removeIfNotAnimate();
+          treeItem.api.updateEnteringState();
         },
-        onAnimationEnd() {
-          store.animatingKeys.delete(child.key);
-          if (context.isPresent) {
-            store.enteredKeys.add(child.key);
-          } else {
-            removeExitingChild();
+        scheduleAnimation: () => {
+          treeItem.state.animating = true;
+        },
+        onAnimationStart: () => {
+        },
+        onAnimationEnd: () => {
+          treeItem.state.animating = false;
+          const isPresent = treeItem.state.present === true;
+          this.resetEntering(treeItem);
+          if (!isPresent) {
+            treeItem.api.onExitingDone();
           }
         }
       }
     };
-    store.renderedChildKeys.add(child.key);
-    store.contextByKey.set(child.key, context);
-    const childKey = child.key;
-    return /* @__PURE__ */ React12.createElement(
-      AnimatePresenceContext.Provider,
-      {
-        key: childKey,
-        value: { ...context }
-      },
-      child
-    );
-  });
-  const exitingChildrenKeys = /* @__PURE__ */ new Set();
-  store.contextByKey.forEach((context) => {
-    const child = context.element;
-    if (!(typeof child === "object")) return;
-    if (!("key" in child)) return;
-    const childKey = child.key;
-    const childStillInTree = store.renderedChildKeys.has(childKey);
-    if (childStillInTree) return;
-    exitingChildrenKeys.add(childKey);
-    const animatedExitingElement = /* @__PURE__ */ React12.createElement(
-      AnimatePresenceContext.Provider,
-      {
-        key: childKey,
-        value: { ...context }
-      },
-      child
-    );
-    if (context.isLast) {
-      children.push(animatedExitingElement);
+    const existingItem = this.tree.find((item) => {
+      return item.item.key === child.key;
+    });
+    if (!existingItem) {
+      this.updatePresence(treeItem, true);
+      this.tree.push(treeItem);
     } else {
-      const exitedIndexesBefore = store.exitedIndexes.filter((removedIdx) => context.index > removedIdx);
-      children.splice(context.index - exitedIndexesBefore.length, 0, animatedExitingElement);
+      this.updatePresence(existingItem, true);
+      existingItem.item = {
+        key: child.key,
+        index,
+        child,
+        containerRef: this.wrappedPresenceRef
+      };
     }
-  });
-  const hasExitingElements = exitingChildrenKeys.size > 0;
-  if (!hasExitingElements) {
-    store.keysBeforeExit = new Set(Array.from(store.renderedChildKeys));
-  } else {
-    children.forEach((child, index) => {
-      if (!child?.key) return;
-      const isPresentBeforeAnyExit = store.keysBeforeExit.has(child.key);
-      if (mode === "wait" && !isPresentBeforeAnyExit) {
-        children[index] = /* @__PURE__ */ React12.createElement(React12.Fragment, null);
+  }
+  rerender = () => {
+    this.changeEventEmitter.emit("change");
+  };
+  resetEntering(treeItem) {
+    const prev = treeItem.state.entering;
+    treeItem.state.entering = false;
+    const hasChanged = prev !== treeItem.state.entering;
+    if (hasChanged) {
+      this.rerender();
+    }
+  }
+  trackExitingItems(presentItemsKeys) {
+    this.tree.forEach((treeItem) => {
+      if (!presentItemsKeys.has(treeItem.item.key)) {
+        this.updatePresence(treeItem, false);
       }
     });
   }
-  store.isInitial = false;
-  store.exitedIndexes = [];
-  return children;
+  updatePresence(item, presence) {
+    const prevPresent = item.state.present;
+    item.state.present = presence;
+    if (prevPresent !== presence) {
+      item.state.entering = presence;
+    }
+  }
+  isFirstRender = true;
+  addItemsToTree(componentProps) {
+    const childrenArr = React12.Children.toArray(componentProps.children);
+    const childrenKeys = /* @__PURE__ */ new Set();
+    childrenArr.forEach((child, index) => {
+      const isValidElement2 = React12.isValidElement(child);
+      if (isValidElement2) {
+        childrenKeys.add(child.key);
+        this.upsertItem(child, index);
+      }
+    });
+    this.isFirstRender = false;
+    return childrenKeys;
+  }
+  changeEventEmitter = new EventEmitter();
+  subscribe(callback) {
+    return this.changeEventEmitter.addListener("change", callback);
+  }
+  removeStaleExitingItems() {
+    let hasRemovedItems = false;
+    this.tree.forEach((item, index) => {
+      const isPresent = item.state.present === true;
+      const isAnimating = item.state.animating === true;
+      if (!isPresent && !isAnimating) {
+        console.log("remove", item.item.child.props.debugId);
+        this.tree.splice(index, 1);
+        hasRemovedItems = true;
+      }
+    });
+    return hasRemovedItems;
+  }
+  snapshot(componentProps) {
+    const childrenKeys = this.addItemsToTree(componentProps);
+    this.trackExitingItems(childrenKeys);
+  }
+  render() {
+    const nextChildren = [];
+    this.tree.forEach((item) => {
+      nextChildren.splice(item.item.index, 0, /* @__PURE__ */ jsx(AnimatePresenceContext.Provider, { value: item, children: React12.cloneElement(item.item.child, item.item.child.props) }, item.item.key));
+    });
+    return nextChildren;
+  }
+};
+
+// src/AnimatePresence.tsx
+var AnimatePresence = (props) => {
+  const [_, rerender] = React12__default.useState({});
+  const [presenceCtl] = React12__default.useState(() => new PresenceController({
+    presenceRef: props.parentRef
+  }));
+  presenceCtl.snapshot(props);
+  React12__default.useEffect(() => {
+    const subscription = presenceCtl.subscribe(() => rerender({}));
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+  return presenceCtl.render();
 };
 
 // src/lib/anyConfig.ts
@@ -211,7 +228,7 @@ var conditionalWrap = (content, wrappers) => {
   }
   return result;
 };
-var surfaceContext = React12.createContext(null);
+var surfaceContext = React12__default.createContext(null);
 surfaceContext.Provider;
 
 // src/lib/deepAssign.ts
@@ -247,11 +264,11 @@ var getAnimatedComp = (comp) => {
   animatedComponentByComponent.set(comp, animatedComponent);
   return animatedComponent;
 };
-var Natural = (value, callback) => withTiming(
+var Spring = (value, callback) => withSpring(
   value,
   {
-    duration: 200,
-    easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+    duration: 900,
+    dampingRatio: 0.7,
     // easing: Easing.out(Easing.quad),
     // easing: Easing.,
     reduceMotion: ReduceMotion.System
@@ -259,14 +276,11 @@ var Natural = (value, callback) => withTiming(
   callback
 );
 var animateToValue = (value, config, callback) => {
-  if (typeof config === "boolean") {
-    return Natural(value, callback);
-  }
-  return Natural(value, callback);
+  return Spring(value, callback);
 };
 function useDynamicSharedValues() {
-  const ref = React12.useRef({}).current;
-  React12.useEffect(() => {
+  const ref = React12__default.useRef({}).current;
+  React12__default.useEffect(() => {
     return () => {
       Object.values(ref).forEach((value) => {
         cancelAnimation(value.shared);
@@ -333,6 +347,16 @@ var createControlledPromise = () => {
 };
 
 // src/lib/useAnimatedStyle.ts
+var useAnimatedStylesheet = (compRef, componentProps, presence, originalProps) => {
+  const transition = componentProps.transition || {};
+  const styleProp = componentProps.style;
+  componentProps.animation;
+  delete componentProps.transition;
+  delete componentProps.animation;
+  delete componentProps.overrides;
+  useTransitionedStyles(presence, transition, styleProp);
+  useDetachStyle(compRef, componentProps, presence, originalProps, styleProp);
+};
 var defaultTransforms = {
   rotate: "0deg",
   rotateX: "0deg",
@@ -373,18 +397,12 @@ var styleDefaults = {
   borderBottomLeftRadius: 0,
   borderBottomRightRadius: 0
 };
-var useAnimatedStylesheet = (compRef, componentProps, presence, originalProps) => {
-  const [state] = React12.useState(() => ({
+var useTransitionedStyles = (presence, transition, styleProp, props) => {
+  const [state] = React12__default.useState(() => ({
     pendingTransitions: [],
     animationEffects: /* @__PURE__ */ new Map()
     // completedAnimations: new Set<string>(),
   }));
-  const transition = componentProps.transition || {};
-  componentProps.animation;
-  delete componentProps.transition;
-  delete componentProps.animation;
-  delete componentProps.overrides;
-  const styleProp = componentProps.style;
   const sharedValues = useDynamicSharedValues();
   const animationKeys = Object.keys(transition || {});
   const remainingAnimatedProperties = new Set(animationKeys);
@@ -393,6 +411,7 @@ var useAnimatedStylesheet = (compRef, componentProps, presence, originalProps) =
     remainingAnimatedProperties.delete(key);
     sharedValues.init(key, initial);
     const hasChanged = sharedValues.target(key, next);
+    presence?.lifecycle?.scheduleAnimation?.();
     state.animationEffects.set(key, () => {
       const isAnimating = state.pendingTransitions.length > 0;
       if (!isAnimating) {
@@ -402,7 +421,6 @@ var useAnimatedStylesheet = (compRef, componentProps, presence, originalProps) =
       const transitionConfig = transition[key];
       compiledStyle.transitionDelay || 0;
       const onAnimationEnd = () => promiseCtl.complete();
-      console.log("animate", originalProps.debugId, hasChanged, key, next);
       if (hasChanged) {
         sharedValues.set(key, animateToValue(next, transitionConfig, () => {
           "worklet";
@@ -420,7 +438,7 @@ var useAnimatedStylesheet = (compRef, componentProps, presence, originalProps) =
       });
     });
   };
-  React12.useEffect(() => {
+  React12__default.useEffect(() => {
     Array.from(state.animationEffects.values()).forEach((startAnimation) => startAnimation());
     state.animationEffects.clear();
   });
@@ -478,32 +496,49 @@ var useAnimatedStylesheet = (compRef, componentProps, presence, originalProps) =
     return style;
   });
   styleProp.push(animatedStyle);
-  if (presence?.presenceRef) {
-    const prevOnLayout = componentProps.onLayout;
-    const distanceX = useSharedValue(0);
-    const distanceY = useSharedValue(0);
-    componentProps.onLayout = (event) => {
-      prevOnLayout?.(event);
-      const layout = event.nativeEvent.layout;
-      if (!layout) return;
-      distanceX.value = layout.x;
-      distanceY.value = layout.y;
+};
+var useDetachStyle = (compRef, componentProps, presence, originalProps, styleProp) => {
+  if (!presence?.item.containerRef) {
+    return;
+  }
+  const prevOnLayout = componentProps.onLayout;
+  const detachHistory = React12__default.useRef([]);
+  const distanceX = useSharedValue(0);
+  const distanceY = useSharedValue(0);
+  componentProps.onLayout = (event) => {
+    prevOnLayout?.(event);
+    const nativeLayout = event.nativeEvent.layout;
+    const layout = Platform.OS === "web" && compRef ? measure(compRef) : nativeLayout;
+    distanceX.value = layout.x;
+    distanceY.value = layout.y;
+  };
+  const detachStyle = useAnimatedStyle(() => {
+    return {
+      left: distanceX.value,
+      top: distanceY.value
     };
-    const detachStyle = useAnimatedStyle(() => {
-      console.log("DETACH STYLE", {
-        position: "absolute",
-        left: distanceX.value,
-        top: distanceY.value
-      });
-      return {
-        position: "absolute",
-        left: distanceX.value,
-        top: distanceY.value
-      };
+  });
+  const unDetachStyle = useAnimatedStyle(() => {
+    return {
+      // left: 0,
+      // top: 0,
+    };
+  });
+  const isDetached = !!componentProps.detach;
+  detachHistory.current.push(isDetached);
+  detachHistory.current = detachHistory.current.slice(-2);
+  const shouldUndoDetachAnimatedStyles = detachHistory.current[0] === true && detachHistory.current[1] === false;
+  if (isDetached) {
+    styleProp.push({
+      position: "absolute",
+      top: distanceY.value,
+      left: distanceX.value,
+      // detach style should be displayed below undetached apps.
+      zIndex: -1
     });
-    if (componentProps.detach) {
-      styleProp.push(detachStyle);
-    }
+    styleProp.push(detachStyle);
+  } else if (shouldUndoDetachAnimatedStyles) {
+    styleProp.unshift(unDetachStyle);
   }
 };
 StyleSheet.create({
@@ -512,23 +547,23 @@ StyleSheet.create({
   }
 }).base;
 var useRerenderRef = (initialValue) => {
-  const [state, rerender] = React12.useState(() => ({ current: initialValue() }));
+  const [state, rerender] = React12__default.useState(() => ({ current: initialValue() }));
   return {
     current: state.current,
     rerender: () => rerender((prev) => ({ ...prev }))
   };
 };
-var InteractionStateContext = React12.createContext(null);
+var InteractionStateContext = React12__default.createContext(null);
 var InteractionStateProvider = (props) => {
-  const parentContext = React12.useContext(InteractionStateContext) || {};
+  const parentContext = React12__default.useContext(InteractionStateContext) || {};
   const nextContext = {
     ...parentContext,
     [props.groupId]: props.state
   };
-  return /* @__PURE__ */ React12.createElement(InteractionStateContext.Provider, { value: nextContext }, props.children);
+  return /* @__PURE__ */ jsx(InteractionStateContext.Provider, { value: nextContext, children: props.children });
 };
 var useInteractionStateContext = (config) => {
-  const parentContext = React12.useContext(InteractionStateContext) || {};
+  const parentContext = React12__default.useContext(InteractionStateContext) || {};
   const state = parentContext[config.groupId];
   return state;
 };
@@ -550,12 +585,6 @@ var useComponentOverrides = (props) => {
           const state = useInteractionStateContext({ groupId: id });
           return state;
         },
-        get entered() {
-          return presence?.entered;
-        },
-        get entering() {
-          return presence?.entering;
-        },
         get initial() {
           const isFirstRender = current.isInitial;
           if (isFirstRender) {
@@ -565,9 +594,15 @@ var useComponentOverrides = (props) => {
           if (!presence) return false;
           return isFirstRender;
         },
+        get entering() {
+          return presence?.state.entering;
+        },
+        get entered() {
+          return presence?.state.present && !presence?.state.entering;
+        },
         get exiting() {
           if (!presence) return false;
-          const isExiting = !presence?.isPresent;
+          const isExiting = !presence?.state.present;
           return isExiting;
         },
         get hovered() {
@@ -649,27 +684,34 @@ var useComponentOverrides = (props) => {
 };
 var OrientationContext = createContext(null);
 var OrientationProvider = ({ children }) => {
-  const [orientation, setOrientation] = useState(null);
+  const [_, rerender] = useState({});
+  const orientationRef = React12__default.useRef(Orientation.UNKNOWN);
   useEffect(() => {
     let isMounted = true;
-    const getOrientation = async () => {
-      const currentOrientation = await getOrientationAsync();
-      if (isMounted) {
-        setOrientation(currentOrientation);
+    const onOrientationChange = (orientation) => {
+      if (!isMounted) return;
+      if (!orientation) return;
+      console.log("onOrientationChange", orientation, orientationRef.current);
+      const hasChanged = orientationRef.current !== orientation;
+      if (hasChanged) {
+        orientationRef.current = orientation;
+        rerender({});
       }
     };
+    const getOrientation = async () => {
+      const currentOrientation = await getOrientationAsync();
+      onOrientationChange(currentOrientation);
+    };
     const subscription = addOrientationChangeListener(({ orientationInfo }) => {
-      if (isMounted) {
-        setOrientation(orientationInfo.orientation);
-      }
+      onOrientationChange(orientationInfo.orientation);
     });
     getOrientation();
     return () => {
       isMounted = false;
-      removeOrientationChangeListener(subscription);
+      subscription.remove?.();
     };
   }, []);
-  return /* @__PURE__ */ React12.createElement(OrientationContext.Provider, { value: orientation }, children);
+  return /* @__PURE__ */ jsx(OrientationContext.Provider, { value: orientationRef.current, children });
 };
 var useDeviceOrientation = () => {
   const orientation = useContext(OrientationContext);
@@ -683,13 +725,13 @@ var useDeviceOrientation = () => {
   if (isPortrait) return "portrait";
   return "portrait";
 };
-var DimensionsContext = React12.createContext(null);
+var DimensionsContext = React12__default.createContext(null);
 var ScreenDimensionProvider = (props) => {
   const dimensions = useScreenDimensions();
-  return /* @__PURE__ */ React12.createElement(DimensionsContext.Provider, { value: dimensions }, props.children);
+  return /* @__PURE__ */ jsx(DimensionsContext.Provider, { value: dimensions, children: props.children });
 };
 var useScreenDimensions = () => {
-  const dimensionCtx = React12.useContext(DimensionsContext);
+  const dimensionCtx = React12__default.useContext(DimensionsContext);
   if (dimensionCtx) {
     return dimensionCtx;
   }
@@ -1878,7 +1920,6 @@ var createTextBase = (rawTheme) => {
   };
 };
 var AnimateLayoutSize = (props) => {
-  const { View } = props;
   const trackRef = props.innerRef || useAnimatedRef();
   const animatedSize = useTransitionedSize({
     elementRef: trackRef,
@@ -1895,38 +1936,41 @@ var AnimateLayoutSize = (props) => {
   const getStyle = (attribute2) => {
     return props.innerProps.style?.[attribute2] || props.innerProps.style.findLast((style) => style[attribute2])?.[attribute2];
   };
-  return /* @__PURE__ */ React12.createElement(
-    View,
+  return /* @__PURE__ */ jsx(
+    Animated.View,
     {
-      key: "apply",
-      relative: true,
-      overflowHidden: true,
-      debugId: "animateSize",
-      disableLayoutTransitions: true,
+      className: "OUTER",
       style: [
+        { position: "relative" },
         animatedSize.isInitialized && applyStyle
-      ]
+      ],
+      children: /* @__PURE__ */ jsx(
+        Animated.View,
+        {
+          onLayout: animatedSize.onLayout,
+          ref: trackRef,
+          className: "INNER",
+          style: [
+            {
+              // We need to forward flexDirection and gap
+              // otherwise the layout won't look how the user intend
+              flexDirection: getStyle("flexDirection"),
+              gap: getStyle("gap")
+            },
+            animatedSize.isInitialized && {
+              position: "absolute",
+              top: 0,
+              left: 0,
+              height: animateWidth ? animateHeight ? void 0 : "100%" : void 0,
+              width: animateHeight ? animateWidth ? void 0 : "100%" : void 0
+            }
+          ],
+          children: props.children
+        },
+        "track"
+      )
     },
-    /* @__PURE__ */ React12.createElement(
-      View,
-      {
-        key: "track",
-        onLayout: animatedSize.onLayout,
-        ref: trackRef,
-        flexDirection: getStyle("flexDirection"),
-        gap: getStyle("gap"),
-        overrides: [
-          animatedSize.isInitialized && {
-            absolute: true,
-            top: 0,
-            left: 0,
-            height: animateWidth ? animateHeight ? void 0 : "100%" : void 0,
-            width: animateHeight ? animateWidth ? void 0 : "100%" : void 0
-          }
-        ]
-      },
-      props.children
-    )
+    "apply"
   );
 };
 var INITIAL = {
@@ -1935,8 +1979,8 @@ var INITIAL = {
   height: 0
 };
 var useTransitionedSize = (config) => {
-  const [_, rerender] = React12.useState({});
-  const lastValues = React12.useRef({ ...INITIAL });
+  const [_, rerender] = React12__default.useState({});
+  const lastValues = React12__default.useRef({ ...INITIAL });
   const trackTarget = (target) => {
     lastValues.current.__hasChanged = true;
     lastValues.current.width = target.width;
@@ -1946,7 +1990,7 @@ var useTransitionedSize = (config) => {
     width: useSharedValue(INITIAL.width),
     height: useSharedValue(INITIAL.height)
   };
-  const updateValue = React12.useCallback((target) => {
+  const updateValue = React12__default.useCallback((target) => {
     const isInitialized2 = !!lastValues.current.__hasChanged;
     const widthChanged = target.width !== lastValues.current.width;
     const heightChanged = target.height !== lastValues.current.height;
@@ -1958,12 +2002,13 @@ var useTransitionedSize = (config) => {
       return;
     }
     trackTarget(target);
-    if (heightChanged) ui.height.value = animateToValue(target.height, config.transition);
-    if (widthChanged) ui.width.value = animateToValue(target.width, config.transition);
+    if (heightChanged) ui.height.value = animateToValue(target.height);
+    if (widthChanged) ui.width.value = animateToValue(target.width);
   }, []);
   const getTargetFromLayout = (event, debugId) => {
     "worklet";
-    const layout = event.nativeEvent.layout;
+    const nativeLayout = event.nativeEvent.layout;
+    const layout = Platform.OS === "web" ? measure(config.elementRef) : nativeLayout;
     const nextWidth = Math.round(layout.width);
     const nextHeight = Math.round(layout.height);
     return {
@@ -1975,7 +2020,7 @@ var useTransitionedSize = (config) => {
     const target = getTargetFromLayout(event);
     updateValue(target);
   };
-  React12.useLayoutEffect(() => {
+  React12__default.useEffect(() => {
     if (!config.elementRef) return;
     const measured = measure(config.elementRef);
     if (!measured) return;
@@ -2000,8 +2045,8 @@ var useTransitionedSize = (config) => {
   };
 };
 var useAnimatedLayoutSize = (elementRef, debugId) => {
-  const [initialSize, setInitialSize] = React12.useState(null);
-  const sizeRef = React12.useRef({ width: 0, height: 0 });
+  const [initialSize, setInitialSize] = React12__default.useState(null);
+  const sizeRef = React12__default.useRef({ width: 0, height: 0 });
   const width = useSharedValue(sizeRef.current.width);
   const height = useSharedValue(sizeRef.current.height);
   const onLayout = (event) => {
@@ -2019,7 +2064,7 @@ var useAnimatedLayoutSize = (elementRef, debugId) => {
       height: nextHeight
     });
   };
-  React12.useLayoutEffect(() => {
+  React12__default.useLayoutEffect(() => {
     if (!elementRef) return;
     const elementRect = measure(elementRef);
     if (!elementRect) return;
@@ -2052,26 +2097,26 @@ var useAnimatedLayoutSize = (elementRef, debugId) => {
     onLayout
   };
 };
-
-// src/AnimateLayoutPosition.tsx
 var AnimateLayoutPosition = (props) => {
-  const { View } = props;
-  const child = React12.Children.only(props.children);
+  const child = React12__default.Children.only(props.children);
   const trackRef = useAnimatedRef();
   const applyRef = useAnimatedRef();
   const sizeTracker = useAnimatedLayoutSize(applyRef);
   const anchor = useAnchorStyle(child.props);
   const transition = useTransitionedPosition({
-    elementRef: trackRef,
-    transition: props.transition
+    debugId: props.debugId,
+    transition: props.transition,
+    trackRef,
+    applyRef
   });
   const isSizeMeasured = !!sizeTracker.initialSize;
   const anchorStyle = useAnimatedStyle(() => {
-    const position = {};
-    if (!isSizeMeasured) return position;
+    if (!isSizeMeasured) return {};
     const trackPos = measure(trackRef);
-    if (!trackPos) return position;
-    position.position = "absolute";
+    if (!trackPos) return {};
+    const position = {
+      position: "absolute"
+    };
     const isOppositeAnchorHorizontal = typeof anchor.ui.right.value === "number";
     if (isOppositeAnchorHorizontal) {
       const distance = trackPos.x + trackPos.width - transition.ui.right.value;
@@ -2092,30 +2137,9 @@ var AnimateLayoutPosition = (props) => {
     }
     return position;
   });
+  anchorStyle.name = "ANCHOR";
   return [
-    isSizeMeasured && /* @__PURE__ */ React12.createElement(
-      View,
-      {
-        key: "track",
-        ref: trackRef,
-        onLayout: (event) => {
-          transition.onLayout?.(event);
-        },
-        style: [
-          ...anchor.positionStyle,
-          ...sizeTracker.style,
-          {
-            // position: 'relative',
-            zIndex: -1,
-            opacity: 0,
-            backgroundColor: "transparent"
-            // opacity: .5,
-            // backgroundColor: 'red'
-          }
-        ]
-      }
-    ),
-    React12.cloneElement(child, {
+    React12__default.cloneElement(child, {
       key: "apply",
       ...child.props,
       ref: (ref) => {
@@ -2125,14 +2149,43 @@ var AnimateLayoutPosition = (props) => {
       onLayout: (event) => {
         transition.onInitialLayout(event);
         sizeTracker.onLayout(event);
-        child.props.onLayout?.(event);
       },
       style: [
         { zIndex: 1 },
         ...child.props.style,
         transition.isInitialized && anchorStyle
+        // Debug Styles,
+        // {
+        // opacity: .1,
+        // backgroundColor: 'black',
+        // },
       ]
-    })
+    }),
+    transition.isInitialized && /* @__PURE__ */ jsx(
+      Animated.View,
+      {
+        ref: trackRef,
+        onLayout: (event) => {
+          transition.onLayout?.(event);
+          child.props.onLayout?.(event);
+        },
+        style: [
+          ...anchor.positionStyle,
+          ...sizeTracker.style,
+          {
+            zIndex: -1,
+            opacity: 0,
+            backgroundColor: "transparent"
+          }
+          // // Debug Styles,
+          // {
+          // opacity: .5,
+          // backgroundColor: 'red'
+          // },
+        ]
+      },
+      "track"
+    )
   ];
 };
 var INITIAL2 = {
@@ -2143,8 +2196,8 @@ var INITIAL2 = {
   bottom: 0
 };
 var useTransitionedPosition = (config) => {
-  const [_, rerender] = React12.useState({});
-  const lastValues = React12.useRef({ ...INITIAL2 });
+  const [_, rerender] = React12__default.useState({});
+  const lastValues = React12__default.useRef({ ...INITIAL2 });
   const trackTarget = (target) => {
     lastValues.current.__hasChanged = true;
     lastValues.current.left = target.left;
@@ -2158,7 +2211,7 @@ var useTransitionedPosition = (config) => {
     right: useSharedValue(INITIAL2.right),
     bottom: useSharedValue(INITIAL2.bottom)
   };
-  const updateValue = React12.useCallback((target) => {
+  const updateValue = React12__default.useCallback((target) => {
     const isInitialized2 = !!lastValues.current.__hasChanged;
     if (!isInitialized2) {
       trackTarget(target);
@@ -2174,21 +2227,21 @@ var useTransitionedPosition = (config) => {
     const topChanged = target.top !== lastValues.current.top;
     const bottomChanged = target.bottom !== lastValues.current.bottom;
     trackTarget(target);
-    if (topChanged) ui.top.value = animateToValue(target.top, config.transition);
-    if (leftChanged) ui.left.value = animateToValue(target.left, config.transition);
-    if (rightChanged) ui.right.value = animateToValue(target.right, config.transition);
-    if (bottomChanged) ui.bottom.value = animateToValue(target.bottom, config.transition);
+    if (topChanged) ui.top.value = animateToValue(target.top);
+    if (leftChanged) ui.left.value = animateToValue(target.left);
+    if (rightChanged) ui.right.value = animateToValue(target.right);
+    if (bottomChanged) ui.bottom.value = animateToValue(target.bottom);
   }, []);
-  const getTargetFromLayout = (event, debugId) => {
+  const getTargetFromLayout = (event, ref, debugId) => {
     "worklet";
-    const layout = event.nativeEvent.layout;
+    const nativeLayout = event.nativeEvent.layout;
+    const layout = Platform.OS == "web" ? measure(ref) : nativeLayout;
     const nextWidth = Math.round(layout.width);
     const nextHeight = Math.round(layout.height);
     const nextLeft = Math.round(layout.x);
     const nextTop = Math.round(layout.y);
     const nextRight = nextLeft + nextWidth;
     const nextBottom = nextTop + nextHeight;
-    console.log("TRANSITION STYLE", debugId, [nextWidth, nextHeight, nextLeft, nextTop]);
     return {
       left: nextLeft,
       top: nextTop,
@@ -2199,16 +2252,18 @@ var useTransitionedPosition = (config) => {
   const onInitialLayout = (event) => {
     const isInitialized2 = !!lastValues.current.__hasChanged;
     if (isInitialized2) return;
-    const target = getTargetFromLayout(event, "onInitialLayout");
+    const target = getTargetFromLayout(event, config.applyRef);
     updateValue(target);
   };
   const onLayout = (event) => {
-    const target = getTargetFromLayout(event, "onLayout");
+    const target = getTargetFromLayout(event, config.trackRef);
     updateValue(target);
   };
-  React12.useLayoutEffect(() => {
-    if (!config.elementRef) return;
-    const measured = measure(config.elementRef);
+  React12__default.useEffect(() => {
+    const isInitialized2 = !!lastValues.current.__hasChanged;
+    const ref = isInitialized2 ? config.trackRef : config.applyRef;
+    if (!ref) return;
+    const measured = measure(ref);
     if (!measured) return;
     const event = {
       nativeEvent: {
@@ -2220,7 +2275,7 @@ var useTransitionedPosition = (config) => {
         }
       }
     };
-    const target = getTargetFromLayout(event, "onLayout");
+    const target = getTargetFromLayout(event, ref);
     updateValue(target);
   });
   const isInitialized = !!lastValues.current.__hasChanged;
@@ -2232,7 +2287,7 @@ var useTransitionedPosition = (config) => {
   };
 };
 var useAnchorStyle = (props) => {
-  const anchorValues = React12.useRef({});
+  const anchorValues = React12__default.useRef({});
   anchorValues.current = {};
   const positionStyle = [];
   const withoutPositionStyle = [];
@@ -2280,7 +2335,7 @@ var useAnchorStyle = (props) => {
     top: useSharedValue(0),
     bottom: useSharedValue(0)
   };
-  React12.useLayoutEffect(() => {
+  React12__default.useLayoutEffect(() => {
     sharedAnchor.bottom.value = anchorValues.current.bottom ?? "unset";
     sharedAnchor.left.value = anchorValues.current.left ?? "unset";
     sharedAnchor.right.value = anchorValues.current.right ?? "unset";
@@ -2292,8 +2347,6 @@ var useAnchorStyle = (props) => {
     withoutPositionStyle
   };
 };
-
-// src/surface.tsx
 var getTypedTheme = (theme) => {
   const colors = theme.colors;
   const breakpoints = theme.breakpoints;
@@ -2325,7 +2378,7 @@ var createSurfaced2 = () => {
     };
   };
   const useSurfaceTheme = () => {
-    const context = React12.useContext(surfaceContext);
+    const context = React12__default.useContext(surfaceContext);
     return context;
   };
   const EnsureFontsLoaded = () => {
@@ -2333,7 +2386,10 @@ var createSurfaced2 = () => {
     return null;
   };
   const ThemeProvider = (props) => {
-    return /* @__PURE__ */ React12.createElement(ScreenDimensionProvider, null, /* @__PURE__ */ React12.createElement(OrientationProvider, null, /* @__PURE__ */ React12.createElement(surfaceContext.Provider, { value: props.theme }, /* @__PURE__ */ React12.createElement(EnsureFontsLoaded, null), props.children)));
+    return /* @__PURE__ */ jsx(ScreenDimensionProvider, { children: /* @__PURE__ */ jsx(OrientationProvider, { children: /* @__PURE__ */ jsxs(surfaceContext.Provider, { value: props.theme, children: [
+      /* @__PURE__ */ jsx(EnsureFontsLoaded, {}),
+      props.children
+    ] }) }) });
   };
   const configByComponent = /* @__PURE__ */ new Map();
   const attrs = {
@@ -2367,7 +2423,7 @@ var createSurfaced2 = () => {
           current: currentConfig
         };
       };
-      const createContext2 = (theme) => {
+      const createContext3 = (theme) => {
         const { merged, current } = getMergedStyleConfig({
           theme,
           attrs
@@ -2567,7 +2623,7 @@ var createSurfaced2 = () => {
         if (alreadyCreated) {
           return alreadyCreated;
         }
-        const stored = createContext2(theme);
+        const stored = createContext3(theme);
         stylesheetsMap.set(theme, stored);
         return stored;
       };
@@ -2578,7 +2634,7 @@ var createSurfaced2 = () => {
     return {
       as: (Component2) => {
         return (props) => {
-          return /* @__PURE__ */ React12.createElement(Component, { as: Component2, ...props });
+          return /* @__PURE__ */ jsx(Component, { as: Component2, ...props });
         };
       },
       with: (styleFactory) => {
@@ -2591,9 +2647,9 @@ var createSurfaced2 = () => {
         };
         const component = (props) => {
           const theme = useSurfaceTheme();
-          const presence = React12.useContext(AnimatePresenceContext);
+          const presence = React12__default.useContext(AnimatePresenceContext);
           const styles = styleManager.getStylesheetForTheme(theme);
-          const compRef = React12.useRef(null);
+          const compRef = React12__default.useRef(null);
           const overridesHanlder = useComponentOverrides(props);
           const styleProp = [styles.baseStylesheet];
           const customStylesFunctions = [];
@@ -2721,11 +2777,10 @@ var createSurfaced2 = () => {
           const isAnimatingPresence = props.transition?.["children"];
           const presenceParentRef = isSizeAnimated ? useAnimatedRef() : animatedRef;
           const children = conditionalWrap(props.children, [
-            isAnimatingPresence && ((props2) => /* @__PURE__ */ React12.createElement(AnimatePresence, { parentRef: presenceParentRef }, props2.children)),
-            isSizeAnimated && ((props2) => /* @__PURE__ */ React12.createElement(
+            isAnimatingPresence && ((props2) => /* @__PURE__ */ jsx(AnimatePresence, { parentRef: presenceParentRef, children: props2.children })),
+            isSizeAnimated && ((props2) => /* @__PURE__ */ jsx(
               AnimateLayoutSize,
               {
-                View: BaseView,
                 innerProps: componentProps,
                 innerRef: presenceParentRef,
                 children: props2.children,
@@ -2752,18 +2807,17 @@ var createSurfaced2 = () => {
               }
             }
           };
-          const wrapped = conditionalWrap(/* @__PURE__ */ React12.createElement(ComponentToRender, { ...renderProps }), [
-            isPositionAnimated && ((p) => /* @__PURE__ */ React12.createElement(
+          const wrapped = conditionalWrap(/* @__PURE__ */ jsx(ComponentToRender, { ...renderProps }), [
+            isPositionAnimated && ((p) => /* @__PURE__ */ jsx(
               AnimateLayoutPosition,
               {
                 debugId: props.debugId,
-                View: BaseView,
                 children: p.children,
                 transition: props.transition?.["position"]
               }
             )),
-            componentProps.gesture && ((p) => /* @__PURE__ */ React12.createElement(GestureDetector, { gesture: componentProps.gesture, ...p })),
-            props.id && ((p) => /* @__PURE__ */ React12.createElement(
+            componentProps.gesture && ((p) => /* @__PURE__ */ jsx(GestureDetector, { gesture: componentProps.gesture, ...p })),
+            props.id && ((p) => /* @__PURE__ */ jsx(
               InteractionStateProvider,
               {
                 groupId: props.id,
@@ -2836,6 +2890,6 @@ var createSurfaced2 = () => {
   });
 };
 
-export { ANIMATE_PRESENCE_PROPS_KEY, AnimatePresence, AnimatePresenceContext, ContentSizing, Cursor, FlexDirection, Position, ScreenDimensionProvider, createSurfaced2 as createSurfaced, createTextBase, createTheme, createViewBase, getAnimatedPresenceProps, getTypedTheme, useScreenDimensions };
+export { AnimatePresence, AnimatePresenceContext, ContentSizing, Cursor, FlexDirection, Position, ScreenDimensionProvider, createSurfaced2 as createSurfaced, createTextBase, createTheme, createViewBase, getTypedTheme, useScreenDimensions };
 //# sourceMappingURL=index.js.map
 //# sourceMappingURL=index.js.map
