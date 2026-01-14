@@ -145,8 +145,9 @@ var PresenceController = class {
     });
     return hasRemovedItems;
   }
-  snapshot(componentProps) {
-    const childrenKeys = this.addItemsToTree(componentProps);
+  snapshot(props) {
+    this.wrappedPresenceRef = props.parentRef;
+    const childrenKeys = this.addItemsToTree(props);
     this.trackExitingItems(childrenKeys);
   }
   render() {
@@ -2002,8 +2003,8 @@ var useTransitionedSize = (config) => {
       return;
     }
     trackTarget(target);
-    if (heightChanged) ui.height.value = animateToValue(target.height);
-    if (widthChanged) ui.width.value = animateToValue(target.width);
+    if (heightChanged) ui.height.value = animateToValue(target.height, config.transition?.height);
+    if (widthChanged) ui.width.value = animateToValue(target.width, config.transition?.width);
   }, []);
   const getTargetFromLayout = (event, debugId) => {
     "worklet";
@@ -2099,6 +2100,7 @@ var useAnimatedLayoutSize = (elementRef, debugId) => {
 };
 var AnimateLayoutPosition = (props) => {
   const child = React12__default.Children.only(props.children);
+  const trackRefCount = React12__default.useRef(0);
   const trackRef = useAnimatedRef();
   const applyRef = useAnimatedRef();
   const sizeTracker = useAnimatedLayoutSize(applyRef);
@@ -2149,6 +2151,7 @@ var AnimateLayoutPosition = (props) => {
       onLayout: (event) => {
         transition.onInitialLayout(event);
         sizeTracker.onLayout(event);
+        child.props.onLayout?.(event);
       },
       style: [
         { zIndex: 1 },
@@ -2161,13 +2164,12 @@ var AnimateLayoutPosition = (props) => {
         // },
       ]
     }),
-    transition.isInitialized && /* @__PURE__ */ jsx(
+    !!sizeTracker.initialSize && /* @__PURE__ */ jsx(
       Animated.View,
       {
         ref: trackRef,
         onLayout: (event) => {
           transition.onLayout?.(event);
-          child.props.onLayout?.(event);
         },
         style: [
           ...anchor.positionStyle,
@@ -2184,7 +2186,7 @@ var AnimateLayoutPosition = (props) => {
           // },
         ]
       },
-      "track"
+      `track-${trackRefCount.current++}`
     )
   ];
 };
@@ -2222,9 +2224,9 @@ var useTransitionedPosition = (config) => {
       rerender({});
       return;
     }
+    const topChanged = target.top !== lastValues.current.top;
     const leftChanged = target.left !== lastValues.current.left;
     const rightChanged = target.right !== lastValues.current.right;
-    const topChanged = target.top !== lastValues.current.top;
     const bottomChanged = target.bottom !== lastValues.current.bottom;
     trackTarget(target);
     if (topChanged) ui.top.value = animateToValue(target.top);
@@ -2351,13 +2353,13 @@ var getTypedTheme = (theme) => {
   const colors = theme.colors;
   const breakpoints = theme.breakpoints;
   const fontSizes = theme.fontSizes;
-  const size2 = theme.size;
+  const size = theme.size;
   const fonts = theme.fonts;
   return {
     colors,
     breakpoints,
     fontSizes,
-    size: size2,
+    size,
     fonts
   };
 };
@@ -2778,6 +2780,10 @@ var createSurfaced2 = () => {
           const presenceParentRef = isSizeAnimated ? useAnimatedRef() : animatedRef;
           const children = conditionalWrap(props.children, [
             isAnimatingPresence && ((props2) => /* @__PURE__ */ jsx(AnimatePresence, { parentRef: presenceParentRef, children: props2.children })),
+            presence && ((props2) => (
+              // The Animate Presence Should propagate only to the direct children of the component
+              /* @__PURE__ */ jsx(AnimatePresenceContext.Provider, { value: null, children: props2.children })
+            )),
             isSizeAnimated && ((props2) => /* @__PURE__ */ jsx(
               AnimateLayoutSize,
               {
@@ -2786,7 +2792,10 @@ var createSurfaced2 = () => {
                 children: props2.children,
                 animateHeight: isHeightTransition,
                 animateWidth: isWidthTransition,
-                transition: props2.transition?.["position"]
+                transition: {
+                  height: props2.transition?.["height"],
+                  width: props2.transition?.["width"]
+                }
               }
             ))
           ]);
