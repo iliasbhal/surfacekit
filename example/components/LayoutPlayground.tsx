@@ -40,31 +40,10 @@ export default function ModalScreen() {
       <LayoutPlayground2 count={count} />
       <LayoutPlayground3 count={count} />
       <ReOrderPlayground items={items} />
-      <TogglePlayground active={toggle} />
     </View>
   );
 }
 
-const TogglePlayground : React.FC<{ active: boolean }> = (props) => {
-  return  (
-    <View display='flex' flexDirection='column' flex={1} itemsCenter justifyCenter>
-      <View backgroundColor='red' width={120} padding={10}>
-        <View display="flex" flexDirection='row' justifyContent={props.active ? 'flex-start' : 'flex-end'} width={100}>
-          <View 
-            // key={props.active ? "toggle" : "toggle-inactive"}
-            width={50}
-            height={50}
-            aaa={props}
-            backgroundColor={"white"}
-            transition={{
-              position: true,
-            }}
-          />
-        </View>
-      </View>
-    </View>
-  )
-}
 
 
 const ReOrderPlayground : React.FC<{ items: number[] }> = (props) => {

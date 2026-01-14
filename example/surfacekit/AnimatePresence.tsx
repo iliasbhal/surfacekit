@@ -6,8 +6,6 @@ export { AnimatePresenceContext, TreeItem } from './lib/PresenceController';
 
 interface AnimatePresenceProps {
   parentRef?: AnimatedRef<any>;
-  propagate?: boolean;
-  mode?: "sync" | "wait";
 }
 
 

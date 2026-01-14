@@ -189,8 +189,11 @@ export class PresenceController {
     return hasRemovedItems;
   }
 
-  snapshot(componentProps: React.PropsWithChildren<any>) {
-    const childrenKeys = this.addItemsToTree(componentProps);
+  snapshot(props: React.PropsWithChildren<any>) {
+    this.wrappedPresenceRef = props.parentRef
+    
+
+    const childrenKeys = this.addItemsToTree(props);
     this.trackExitingItems(childrenKeys);
   }
 

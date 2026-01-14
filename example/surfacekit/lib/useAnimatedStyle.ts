@@ -6,7 +6,7 @@ import { measure } from 'react-native-reanimated';
 import { runOnJS } from "react-native-worklets";
 import { animateToValue } from "./defaultAnimations";
 import { useDynamicSharedValues } from "./useDynamicSharedValues";
-import { TreeItem } from "../AnimatePresence";
+import { TreeItem } from "./PresenceController";
 import { createControlledPromise } from "./ControlledPromise";
 import { replacePart } from "expo-router/build/fork/getStateFromPath-forks";
 import { useIsRenderFromOutside } from "./useIsRenderFromOutside";

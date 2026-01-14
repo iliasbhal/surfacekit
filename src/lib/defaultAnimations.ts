@@ -24,7 +24,7 @@ export const Spring = (value: number, callback?: () => void) => withSpring(
   callback,
 );
 
-export const animateToValue = (value: number, config: any,callback?: () => void) => {
+export const animateToValue = (value: number, config?: any, callback?: () => void) => {
   return Spring(value, callback);
   // if (typeof config === 'boolean') {
   //   return Natural(value, callback);

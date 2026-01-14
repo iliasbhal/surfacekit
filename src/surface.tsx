@@ -7,7 +7,8 @@ import {
   BaseAnimationBuilder,
   useAnimatedRef,
 } from "react-native-reanimated";
-import { AnimatePresence, AnimatePresenceContext } from "./AnimatePresence";
+import { AnimatePresence } from "./AnimatePresence";
+import { AnimatePresenceContext } from './lib/PresenceController';
 import {
   AnyConfig,
   attribute,
@@ -726,6 +727,12 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
                 {props.children}
               </AnimatePresence>
             )),
+            presence && ((props) => (
+              // The Animate Presence Should propagate only to the direct children of the component
+              <AnimatePresenceContext.Provider value={null!}>
+                {props.children}
+              </AnimatePresenceContext.Provider>
+            )),
             isSizeAnimated && ((props) => (
               <AnimateLayoutSize
                 innerProps={componentProps}
@@ -733,7 +740,10 @@ export const createSurfaced = <ThemeValue extends SurfaceTheme>() => {
                 children={props.children}
                 animateHeight={isHeightTransition}
                 animateWidth={isWidthTransition}
-                transition={props.transition?.['position']}
+                transition={{
+                  height: props.transition?.['height'],
+                  width: props.transition?.['width'],
+                }}
               />
             )),
           ]);

@@ -49,8 +49,6 @@ export const Scene: React.FC<{}> = (props) => {
 };
 
 const ReorderList : React.FC<{ items: number[], onItemTap: (id: any) => void }> = (props) => {
-
-  console.log('props.items', props.items);
   return (
     <View
       debugId="debug"
@@ -72,7 +70,7 @@ const ReorderList : React.FC<{ items: number[], onItemTap: (id: any) => void }> 
           key={i}
           debugId={`debug-${i}`}
           width={'100%'}
-          height={100}
+          height={75}
           backgroundColor="blue"
           // opacity={i == 1 ? 1 : 0}
           overflowVisible
@@ -84,7 +82,6 @@ const ReorderList : React.FC<{ items: number[], onItemTap: (id: any) => void }> 
           }}
           gesture={
             Gesture.Tap().runOnJS(true).onBegin(() => {
-              console.log('ON ITEM TAP', i);
               props.onItemTap(i);
             })
           }            

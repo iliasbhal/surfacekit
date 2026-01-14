@@ -1,52 +1,6 @@
 import React from "react";
 import { measure, useAnimatedStyle, useSharedValue } from "react-native-reanimated";
 
-export const useLayoutSize = (elementRef?: any, handleLayoutChange?: (layout: { width: number, height: number}) => any) => {
-  const sizeRef = React.useRef<{ width: number, height: number }|null>({});
-
-  const onLayoutChange = (layout: { width: number, height: number }) =>{
-    const hasChanged = sizeRef.current?.height !== layout.height
-      || sizeRef.current?.width !== layout.width;
-
-    if (!hasChanged) {
-      return;
-    }
-    
-    sizeRef.current = layout;
-    handleLayoutChange(layout);
-  }
-
-  const onLayout = (event: { nativeEvent: { layout: any } }) => {
-    const nextWidth = event.nativeEvent.layout.width;
-    const nextHeight = event.nativeEvent.layout.height;
-    
-    onLayoutChange({
-      width: Math.round(nextWidth),
-      height: Math.round(nextHeight),
-    });
-  }  
-
-  
-  React.useLayoutEffect(() => {
-    if (!elementRef) return;
-
-    const elementRect = measure(elementRef);
-    if (!elementRect) return;
-
-    onLayoutChange({
-      width: Math.round(elementRect.width),
-      height: Math.round(elementRect.height),
-    });
-  })
-
-
-  return {
-    size,
-    onLayout,
-  }
-}
-
-
 export const useAnimatedLayoutSize = (elementRef?: any, debugId?: string) => {
   const [initialSize, setInitialSize] = React.useState<{ width: number, height: number }|null>(null);
   

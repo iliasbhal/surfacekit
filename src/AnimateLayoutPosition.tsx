@@ -13,7 +13,7 @@ interface AnimateLayoutPositionProps {
 
 export const AnimateLayoutPosition : React.FC<React.PropsWithChildren<AnimateLayoutPositionProps>> = (props) => {
   const child = React.Children.only(props.children) as any;
-  
+  const trackRefCount = React.useRef(0);
   const trackRef = useAnimatedRef();
   const applyRef = useAnimatedRef();
 
@@ -81,7 +81,7 @@ export const AnimateLayoutPosition : React.FC<React.PropsWithChildren<AnimateLay
       onLayout: (event: LayoutChangeEvent) => {
         transition.onInitialLayout(event);
         sizeTracker.onLayout(event);
-        
+        child.props.onLayout?.(event);
       },
       style: [
         { zIndex: 1 },
@@ -94,16 +94,14 @@ export const AnimateLayoutPosition : React.FC<React.PropsWithChildren<AnimateLay
         // },
       ]
     }),
-    (transition.isInitialized) && ( 
+    (!!sizeTracker.initialSize) && ( 
       <Animated.View
-        key={"track"}
+        // Hack, on web, the onLayout doesn't get triggered when a rerender happens.
+        // So we create a new View instead to trigger the initial onLayout
+        key={`track-${trackRefCount.current++}`}
         ref={trackRef}
         onLayout={(event) => {
-          // if (rerenderIdRef.current.count === 0) {
-          //   rerenderIdRef.current.count++;
-            transition.onLayout?.(event);
-            child.props.onLayout?.(event);
-          // }
+          transition.onLayout?.(event);
         }}
         style={[
           ...anchor.positionStyle,
@@ -168,9 +166,9 @@ const useTransitionedPosition = (config: {
       return;
     }
 
+    const topChanged = (target.top !== lastValues.current.top);
     const leftChanged = (target.left !== lastValues.current.left);
     const rightChanged = (target.right !== lastValues.current.right);
-    const topChanged = (target.top !== lastValues.current.top);
     const bottomChanged = (target.bottom !== lastValues.current.bottom);
     
     // if (topChanged) console.log('ANIAMTE top', target.top);

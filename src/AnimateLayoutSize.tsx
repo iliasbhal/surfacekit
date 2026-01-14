@@ -9,7 +9,10 @@ interface AnimateLayoutSizeProps {
   innerProps?: any;
   animateHeight?: boolean;
   animateWidth?: boolean;
-  transition: any;
+  transition?: {
+    width?: any;
+    height?: any;
+  };
 }
 
 export const AnimateLayoutSize : React.FC<React.PropsWithChildren<AnimateLayoutSizeProps>> = (props) => {
@@ -78,7 +81,13 @@ const INITIAL = {
   height: 0,
 }
 
-const useTransitionedSize = (config: {elementRef: AnimatedRef<any>, transition: any}) => {
+const useTransitionedSize = (config: {
+  elementRef: AnimatedRef<any>,
+  transition?: {
+    height?: any;
+    width?: any;
+  }
+}) => {
   const [_, rerender] = React.useState({})
   const lastValues = React.useRef({ ...INITIAL });
   const trackTarget = (target: ReturnType<typeof getTargetFromLayout>) => {
@@ -106,8 +115,8 @@ const useTransitionedSize = (config: {elementRef: AnimatedRef<any>, transition: 
     }
 
     trackTarget(target);
-    if (heightChanged) ui.height.value = animateToValue(target.height, config.transition)
-    if (widthChanged) ui.width.value = animateToValue(target.width, config.transition)
+    if (heightChanged) ui.height.value = animateToValue(target.height, config.transition?.height)
+    if (widthChanged) ui.width.value = animateToValue(target.width, config.transition?.width)
   }, []);
 
   const getTargetFromLayout = (event: LayoutChangeEvent, debugId?: string) => {
