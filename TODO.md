@@ -1,2 +1,0 @@
-- Gesture hanlders are not working in the ReorderList example.
-- check for transform and transformsOverrides. as well as entring and exiting using transforms.
