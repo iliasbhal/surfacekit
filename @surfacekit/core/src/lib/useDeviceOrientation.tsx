@@ -16,7 +16,6 @@ export const OrientationProvider = ({ children }: { children: ReactNode }) => {
       if (!isMounted) return;
       if (!orientation) return;
 
-      console.log('onOrientationChange', orientation, orientationRef.current);
       const hasChanged = orientationRef.current !== orientation;
       if (hasChanged) {
         orientationRef.current = orientation;
