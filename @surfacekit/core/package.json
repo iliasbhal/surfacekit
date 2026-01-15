@@ -1,5 +1,5 @@
 {
-  "private": true,
+  "private": false,
   "name": "surfacekit",
   "version": "0.0.20",
   "description": "Lightning-fast, seamless UI creation for React and React Native.",
@@ -14,11 +14,12 @@
     "src/**/*"
   ],
   "scripts": {
-    "dev": "cd example && yarn web",
+    "dev": "tsup --watch",
     "build": "tsup",
     "playground": "tsx scripts/index.tsx",
     "test": "jest --watchAll",
-    "scripts": "tsx scripts/selector.tsx"
+    "scripts": "tsx scripts/selector.tsx",
+    "npm": "npm"
   },
   "dependencies": {
     "@testing-library/react": "^16.3.1",

@@ -22,8 +22,8 @@ export interface TreeItem {
   };
   api: {
     updateEnteringState: () => void;
-    onExitingDone: (debugId?: string) => void;
-    removeIfNotAnimate: (debugId?: string) => void;
+    onExitingDone: () => void;
+    removeIfNotAnimate: () => void;
   }
 };
 
@@ -61,14 +61,14 @@ export class PresenceController {
             const index = this.tree.indexOf(treeItem);
             if (index !== -1) {
               this.tree.splice(index, 1);
-              this.rerender(`onExitingDone: (${treeItem.item.key}) | ${debugId}`);
+              this.rerender();
             }
           }
         },
 
         removeIfNotAnimate: () => {
           setTimeout(() => {
-            treeItem.api.onExitingDone(`removeIfNotAnimate: (${treeItem.item.key})`);
+            treeItem.api.onExitingDone();
           })
         },
 
@@ -99,7 +99,7 @@ export class PresenceController {
           this.resetEntering(treeItem);
 
           if (!isPresent) {
-            treeItem.api.onExitingDone(`onAnimationEnd: (${treeItem.item.key})`);
+            treeItem.api.onExitingDone();
           }
         },
       },
@@ -123,8 +123,8 @@ export class PresenceController {
     }
   }
 
-  rerender = (debugId: string) => {
-    this.changeEventEmitter.emit('change', debugId);
+  rerender = () => {
+    this.changeEventEmitter.emit('change');
   }
 
   resetEntering (treeItem: TreeItem) {
@@ -132,7 +132,7 @@ export class PresenceController {
     treeItem.state.entering = false;
     const hasChanged = prev !== treeItem.state.entering;
     if (hasChanged) {
-      this.rerender(`resetEntering: (${treeItem.item.key})`);
+      this.rerender();
     }
   }
 
@@ -171,10 +171,8 @@ export class PresenceController {
 
   changeEventEmitter = new EventEmitter<any>();
 
-  subscribe(callback: (debugId: string) => void) {
-    return this.changeEventEmitter.addListener('change', (debugId: string) => {
-      callback(debugId);
-    });
+  subscribe(callback: () => void) {
+    return this.changeEventEmitter.addListener('change', callback);
   }
 
   removeStaleExitingItems() {

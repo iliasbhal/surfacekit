@@ -18,10 +18,7 @@ export const AnimatePresence: React.FC<React.PropsWithChildren<AnimatePresencePr
   presenceCtl.snapshot(props);
 
   React.useEffect(() => {
-    const subscription = presenceCtl.subscribe((debugId: string) => {
-      console.log('RERENDER ANIMATE PRESENCE', debugId);
-      rerender({})
-    })
+    const subscription = presenceCtl.subscribe(() => rerender({}));
     return () => {
       subscription.remove();
     }
