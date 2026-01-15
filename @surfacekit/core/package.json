@@ -1,0 +1,60 @@
+{
+  "private": true,
+  "name": "surfacekit",
+  "version": "0.0.20",
+  "description": "Lightning-fast, seamless UI creation for React and React Native.",
+  "author": "ilias.bhal@gmail.com",
+  "type": "module",
+  "license": "MIT",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./src/index.ts",
+  "files": [
+    "dist",
+    "src/**/*"
+  ],
+  "scripts": {
+    "dev": "cd example && yarn web",
+    "build": "tsup",
+    "playground": "tsx scripts/index.tsx",
+    "test": "jest --watchAll",
+    "scripts": "tsx scripts/selector.tsx"
+  },
+  "dependencies": {
+    "@testing-library/react": "^16.3.1",
+    "ts-jest": "^29.4.6",
+    "ts-node": "^10.9.2",
+    "vitest": "^4.0.16"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.28.5",
+    "@babel/preset-react": "^7.28.5",
+    "@babel/preset-typescript": "^7.28.5",
+    "@testing-library/react-native": "^13.3.3",
+    "@types/jest": "^30.0.0",
+    "@types/react": "^19.2.2",
+    "babel-jest": "^30.2.0",
+    "ink": "^6.6.0",
+    "ink-select-input": "^6.2.0",
+    "install-peers": "^1.0.4",
+    "jest": "^30.2.0",
+    "jest-expo": "^54.0.13",
+    "jsdom": "^26.1.0",
+    "tsup": "^8.5.0",
+    "tsx": "^4.20.3",
+    "typescript": "^5.9.3"
+  },
+  "peerDependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.2.3",
+    "expo-font": "^14.0.9",
+    "expo-modules-core": "^3.0.25",
+    "expo-screen-orientation": "^9.0.7",
+    "react-compiler-runtime": "^1.0.0",
+    "react-native": "^0.82.1",
+    "react-native-gesture-handler": "^2.29.1",
+    "react-native-keyboard-controller": "^1.19.5",
+    "react-native-reanimated": "^4.1.5",
+    "react-native-worklets": "^0.6.1"
+  }
+}
