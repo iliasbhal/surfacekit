@@ -1,13 +1,33 @@
 import React, { useState, useEffect } from 'react';
-import { render, Box, Text, useApp } from 'ink';
+import { render, Box, Text, useApp, useInput } from 'ink';
 import SelectInput from 'ink-select-input';
 import fs from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
 
+const ItemComponent = ({ label }: { label: string }) => {
+    const separator = ' - ';
+    const index = label.indexOf(separator);
+    const name = index !== -1 ? label.slice(0, index) : label;
+    const command = index !== -1 ? label.slice(index + separator.length) : '';
+
+    return (
+        <Text>
+            <Text color="white" bold>{name}</Text>
+            {command && <Text color="gray">  {command}</Text>}
+        </Text>
+    );
+};
+
 const ScriptSelector = () => {
     const { exit } = useApp();
     const [scripts, setScripts] = useState<{ label: string; value: string }[]>([]);
+
+    useInput((input, key) => {
+        if (key.escape) {
+            exit();
+        }
+    });
 
     useEffect(() => {
         const packageJsonPath = path.resolve(process.cwd(), 'package.json');
@@ -48,7 +68,11 @@ const ScriptSelector = () => {
         <Box flexDirection="column" padding={1}>
             <Text color="green" bold>Select a script to run:</Text>
             <Box marginTop={1}>
-                <SelectInput items={scripts} onSelect={handleSelect} />
+                <SelectInput 
+                    items={scripts} 
+                    onSelect={handleSelect} 
+                    itemComponent={ItemComponent}
+                />
             </Box>
         </Box>
     );
